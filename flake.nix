@@ -11,7 +11,7 @@
     # `grep` guards that fail loudly if a future upstream rev moves
     # those lines, so pinning is a stability choice, not a security
     # bound. Bump in coordination with the patch derivations -- see
-    # `pkgs/himmelblau-tpm/AGENTS.md`.
+    # `pkgs/himmelblau-tpm/MAINTAINING.md`.
     himmelblau = {
       url = "github:himmelblau-idm/himmelblau/b3c48849cc7b468e33b9e44bb1a1210e49e1391f";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -36,9 +36,13 @@
       # enabled rebuild of Himmelblau. Both the `nixosModules.default`
       # consumer-facing module AND the `packages.<sys>.*` outputs
       # below use it, so it's hoisted to a let binding.
+      #
+      # Uses `final.callPackage` (not raw `import`) so downstream
+      # overlay composition can override the package the standard
+      # way (`overrideAttrs`, `overrideArgs`, `.override { ... }`).
+      # `himmelblauSrc` is threaded through as a non-pkgs arg.
       himmelblauTpmOverlay = final: _prev: {
-        himmelblauTpm = import ./pkgs/himmelblau-tpm {
-          pkgs = final;
+        himmelblauTpm = final.callPackage ./pkgs/himmelblau-tpm {
           himmelblauSrc = himmelblau;
         };
       };

@@ -40,8 +40,8 @@ let
   # Upstream bug (libhimmelblau/src/intune.rs line 521):
   #   "CertificateSigningRequest": STANDARD.encode(csr_der),
   #
-  # Microsoft's Intune endpoint for at least some tenants (verified for
-  # microsoft.com corporate) strictly enforces "PEM-encoded PKCS#10":
+  # Microsoft's Intune endpoint for strict Conditional-Access tenants
+  # enforces "PEM-encoded PKCS#10":
   #   400 Bad Request: Value must be a valid PEM-encoded PKCS#10 CSR
   #   with an RSA key of at least 2048 bits.
   #
@@ -51,7 +51,7 @@ let
   # CERTIFICATE REQUEST----- headers.
   #
   # Microsoft's own Linux Intune client sends real PEM, and tolerant Intune
-  # backends accept either; the corporate tenant is strict. Wrap it.
+  # backends accept either; strict corporate tenants do not. Wrap it.
   libhimmelblauCrate = pkgs.fetchurl {
     url = "https://crates.io/api/v1/crates/libhimmelblau/0.8.18/download";
     name = "libhimmelblau-0.8.18.crate";

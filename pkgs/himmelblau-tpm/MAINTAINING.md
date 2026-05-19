@@ -1,5 +1,11 @@
 # `pkgs/himmelblau-tpm/` — update process
 
+> **Maintainer notes for the `himmelblau-tpm` package; not user-facing
+> instructions.** End users do not need to read this. It documents how
+> to bump the pinned Himmelblau rev, the two vendored crate patches,
+> and the `Cargo.nix` feature-injection surgery without breaking
+> downstream consumers.
+
 This package rebuilds Himmelblau (Microsoft Entra ID daemon) from a
 specific git rev with three layered patches:
 
