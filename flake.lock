@@ -1,5 +1,26 @@
 {
   "nodes": {
+    "himmelblau": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1778779863,
+        "narHash": "sha256-SeYksdQTlSS0CAftGT+V7q9Zps51YeCMekyP6GUTUzI=",
+        "owner": "himmelblau-idm",
+        "repo": "himmelblau",
+        "rev": "b3c48849cc7b468e33b9e44bb1a1210e49e1391f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "himmelblau-idm",
+        "repo": "himmelblau",
+        "rev": "b3c48849cc7b468e33b9e44bb1a1210e49e1391f",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1778869304,
@@ -18,6 +39,7 @@
     },
     "root": {
       "inputs": {
+        "himmelblau": "himmelblau",
         "nixpkgs": "nixpkgs"
       }
     }
