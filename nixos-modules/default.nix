@@ -50,6 +50,7 @@
     joinType = lib.mkOption {
       type = lib.types.enum [ "join" "register" ];
       default = "register";
+      example = "join";
       description = ''
         `join` = Azure AD Joined (corporate-managed, Intune-enrolled).
         `register` = Azure AD Registered (BYOD). Conditional-access-
@@ -73,6 +74,9 @@
       enable = lib.mkOption {
         type = lib.types.bool;
         default = true;
+        # Set to false on Azure-AD-Registered BYOD hosts not enrolled
+        # in Intune (keeps Himmelblau but drops the compliance shims).
+        example = false;
         description = ''
           Whether to apply the Intune device-compliance shimming
           (fake DMI / `/etc/os-release` bind-mounts inside the
