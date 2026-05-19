@@ -43,9 +43,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `pkgs/himmelblau-tpm/` anchor on source lines from that rev).
 - **`examples/bare-metal-host/`** — minimal real flake demonstrating
   `nixosEntraId.*` on a non-VM NixOS host. `nix flake check` and
-  `nix eval ...drvPath` are both clean.
+  `nix eval ...drvPath` are both clean. The inline host module was
+  extracted to its own `configuration.nix` so the top-level flake's
+  `eval-bare-metal` check can reuse it without going through a child
+  flake.
 - **`examples/inside-nixling-vm/`** — README-only sketch showing the
   consumer-side composition with [vicondoa/nixling].
+- **`flake.checks.<sys>`** — real assertions, not an empty attrset.
+  Adds `eval-disabled` (arch-agnostic; asserts the module is a no-op
+  when `nixosEntraId.enable = false`), `eval-intune-off` (x86_64-linux;
+  asserts Himmelblau is wired but the Intune compliance shims do
+  NOT fire when `intuneCompliance.enable = false`),
+  `eval-bare-metal` (x86_64-linux; asserts the
+  `examples/bare-metal-host/` config still evaluates), and
+  `himmelblau-tpm-drv` (x86_64-linux; asserts the TPM-enabled
+  `aad-tool` derivation evaluates without paying for a Rust
+  compile). Each check is verified to actually fire when the
+  guarded property is broken.
+- **`THIRD-PARTY.md`** — per-component license breakdown for the
+  Himmelblau-derived built outputs (GPL-3.0-or-later) and the two
+  vendored crate patches (LGPL-3.0+ libhimmelblau and MPL-2.0
+  kanidm-hsm-crypto). `pkgs.himmelblauTpm.*` now carries
+  `meta.license = lib.licenses.gpl3Plus` so binary-cache redistributors
+  see the obligations explicitly.
 
 ### Changed
 
@@ -58,7 +78,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is not Intune-enrolled can disable it.
 - README: rewritten from "skeleton, planned-API" framing to "use
   this today" framing, with the example imports + flake outputs
-  documented inline.
+  documented inline. Added a "Quick start (10-minute path)" section
+  with prerequisites, step-by-step rebuild + enrolment flow, and
+  common gotchas.
+- `flake.nix`: the overlay now uses `final.callPackage` (instead of
+  raw `import`) so downstream consumers get the standard `.override`
+  composition surface.
+- `pkgs/himmelblau-tpm/`: renamed `AGENTS.md` to `MAINTAINING.md` and
+  added an explicit "Maintainer notes; not user-facing" header.
+  Generic-tenant wording replaces the previous "microsoft.com
+  corporate" reference in the libhimmelblau-patch rationale.
+- `nixos-modules/default.nix`: added `example =` fields on `joinType`
+  and `intuneCompliance.enable` so the option-docs renderer has a
+  suggested value in the right-hand column.
 
 ### Notes
 

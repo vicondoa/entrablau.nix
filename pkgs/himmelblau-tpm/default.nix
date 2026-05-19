@@ -40,8 +40,8 @@ let
   # Upstream bug (libhimmelblau/src/intune.rs line 521):
   #   "CertificateSigningRequest": STANDARD.encode(csr_der),
   #
-  # Microsoft's Intune endpoint for at least some tenants (verified for
-  # microsoft.com corporate) strictly enforces "PEM-encoded PKCS#10":
+  # Microsoft's Intune endpoint for strict Conditional-Access tenants
+  # enforces "PEM-encoded PKCS#10":
   #   400 Bad Request: Value must be a valid PEM-encoded PKCS#10 CSR
   #   with an RSA key of at least 2048 bits.
   #
@@ -51,7 +51,7 @@ let
   # CERTIFICATE REQUEST----- headers.
   #
   # Microsoft's own Linux Intune client sends real PEM, and tolerant Intune
-  # backends accept either; the corporate tenant is strict. Wrap it.
+  # backends accept either; strict corporate tenants do not. Wrap it.
   libhimmelblauCrate = pkgs.fetchurl {
     url = "https://crates.io/api/v1/crates/libhimmelblau/0.8.18/download";
     name = "libhimmelblau-0.8.18.crate";
@@ -216,5 +216,22 @@ let
           };
     ' default.nix
   '';
+
+  # The upstream crate2nix-generated derivations don't set `meta.license`
+  # in a way that survives our crateOverride machinery, so stamp it
+  # explicitly on each workspace binary we expose. These outputs are a
+  # combined work of:
+  #   - Himmelblau (GPL-3.0-or-later, dominant)
+  #   - libhimmelblau (LGPL-3.0-or-later, statically linked)
+  #   - kanidm-hsm-crypto (MPL-2.0, statically linked)
+  # The combined-work license is GPL-3.0-or-later. See ../../THIRD-PARTY.md.
+  rawPackages = (import patchedSrc { inherit pkgs; }).packages;
 in
-  (import patchedSrc { inherit pkgs; }).packages
+pkgs.lib.mapAttrs
+  (_name: drv: drv.overrideAttrs (old: {
+    meta = (old.meta or { }) // {
+      license = pkgs.lib.licenses.gpl3Plus;
+      homepage = "https://github.com/himmelblau-idm/himmelblau";
+    };
+  }))
+  rawPackages
