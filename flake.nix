@@ -13,12 +13,20 @@
     {
       # The public surface area — populated by the refactor's Phase 3.
       #
-      # nixosModules.default will provide:
+      # `nixosModules.default` is reserved as an inert module from W0
+      # onward so downstream consumers can pin the import path early
+      # (`imports = [ inputs.nixos-entra-id.nixosModules.default ];`)
+      # without "attribute missing" errors. Phase 3 replaces the
+      # body with the actual Himmelblau + Intune-compliance wiring.
+      #
+      # nixosModules.default will eventually provide:
       #   nixosEntraId.{enable, domain, joinType, localUser, userMap}
       #   nixosEntraId.intuneCompliance.{fakeDmi, fakeOsRelease, …}
       # And bring along the Himmelblau workspace (PAM, NSS, broker,
       # daemon) plus a TPM-enabled rebuild of himmelblau.
-      nixosModules = { };
+      nixosModules.default = { lib, ... }: {
+        config = lib.mkIf false { };
+      };
 
       packages = forAllSystems (system: { });
 
