@@ -3,6 +3,7 @@
     "himmelblau": {
       "inputs": {
         "nixpkgs": [
+          "nixos-entra-id",
           "nixpkgs"
         ]
       },
@@ -20,6 +21,23 @@
         "rev": "b3c48849cc7b468e33b9e44bb1a1210e49e1391f",
         "type": "github"
       }
+    },
+    "nixos-entra-id": {
+      "inputs": {
+        "himmelblau": "himmelblau",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "path": "../..",
+        "type": "path"
+      },
+      "original": {
+        "path": "../..",
+        "type": "path"
+      },
+      "parent": []
     },
     "nixpkgs": {
       "locked": {
@@ -39,7 +57,7 @@
     },
     "root": {
       "inputs": {
-        "himmelblau": "himmelblau",
+        "nixos-entra-id": "nixos-entra-id",
         "nixpkgs": "nixpkgs"
       }
     }

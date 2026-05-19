@@ -3,35 +3,92 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+
+    # Upstream Himmelblau workspace. Pinned to the same rev as
+    # /etc/nixos's flake.lock at the time of the Phase-3 extract --
+    # the sed patches in `pkgs/himmelblau-tpm/default.nix` anchor on
+    # source lines that exist in this rev. The package has build-time
+    # `grep` guards that fail loudly if a future upstream rev moves
+    # those lines, so pinning is a stability choice, not a security
+    # bound. Bump in coordination with the patch derivations -- see
+    # `pkgs/himmelblau-tpm/AGENTS.md`.
+    himmelblau = {
+      url = "github:himmelblau-idm/himmelblau/b3c48849cc7b468e33b9e44bb1a1210e49e1391f";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, ... }@inputs:
+  outputs = { self, nixpkgs, himmelblau, ... }@inputs:
     let
       systems = [ "x86_64-linux" "aarch64-linux" ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
-    in
-    {
-      # The public surface area — populated by the refactor's Phase 3.
-      #
-      # `nixosModules.default` is reserved as an inert module from W0
-      # onward so downstream consumers can pin the import path early
-      # (`imports = [ inputs.nixos-entra-id.nixosModules.default ];`)
-      # without "attribute missing" errors. Phase 3 replaces the
-      # body with the actual Himmelblau + Intune-compliance wiring.
-      #
-      # nixosModules.default will eventually provide:
-      #   nixosEntraId.{enable, domain, joinType, localUser, userMap}
-      #   nixosEntraId.intuneCompliance.{fakeDmi, fakeOsRelease, …}
-      # And bring along the Himmelblau workspace (PAM, NSS, broker,
-      # daemon) plus a TPM-enabled rebuild of himmelblau.
-      nixosModules.default = { lib, ... }: {
-        config = lib.mkIf false { };
+
+      # The TPM-enabled Himmelblau rebuild is x86_64-only today --
+      # `pkgs/himmelblau-tpm/` consumes the upstream Himmelblau flake's
+      # pre-generated Cargo.nix which is only wired for x86_64-linux,
+      # and the Intune CSR enrolment path was only verified on x86_64
+      # hardware. Headless Himmelblau on aarch64 is a plausible
+      # future extension; revisit when there's a real consumer.
+      himmelblauSystems = [ "x86_64-linux" ];
+      forHimmelblauSystems = nixpkgs.lib.genAttrs himmelblauSystems;
+
+      # The overlay populates `pkgs.himmelblauTpm` with the TPM-
+      # enabled rebuild of Himmelblau. Both the `nixosModules.default`
+      # consumer-facing module AND the `packages.<sys>.*` outputs
+      # below use it, so it's hoisted to a let binding.
+      himmelblauTpmOverlay = final: _prev: {
+        himmelblauTpm = import ./pkgs/himmelblau-tpm {
+          pkgs = final;
+          himmelblauSrc = himmelblau;
+        };
       };
 
-      packages = forAllSystems (system: { });
+      pkgsFor = system: import nixpkgs {
+        inherit system;
+        overlays = [ himmelblauTpmOverlay ];
+      };
+    in
+    {
+      # Consumer entry point. A consumer flake does:
+      #
+      #   imports = [ inputs.nixos-entra-id.nixosModules.default ];
+      #   nixosEntraId.enable = true;
+      #   nixosEntraId.domain = [ "contoso.com" ];
+      #   nixosEntraId.userMap.alice = "alice@contoso.com";
+      #
+      # The wrapper here imports the upstream Himmelblau NixOS module
+      # (from our pinned `inputs.himmelblau`) AND applies the
+      # himmelblau-tpm overlay so `pkgs.himmelblauTpm` is available to
+      # the consumed modules. The actual option schema + config logic
+      # lives under `./nixos-modules`.
+      nixosModules.default = { lib, ... }: {
+        imports = [
+          himmelblau.nixosModules.himmelblau
+          ./nixos-modules
+        ];
+        nixpkgs.overlays = [ himmelblauTpmOverlay ];
+      };
 
-      checks = forAllSystems (system: { });
+      overlays.default = himmelblauTpmOverlay;
 
-      overlays.default = _final: _prev: { };
+      # Diagnostics + composability. `nix build .#himmelblau-tpm`
+      # produces the TPM-enabled aad-tool binary (the most useful
+      # standalone diagnostic -- `aad-tool tpm` reports real TPM
+      # state, `aad-tool auth-test` exercises end-to-end auth).
+      # Sub-binaries are exposed separately for completeness.
+      #
+      # Restricted to x86_64-linux: see `himmelblauSystems` above.
+      packages = forHimmelblauSystems (system:
+        let pkgs = pkgsFor system; in {
+          himmelblau-tpm        = pkgs.himmelblauTpm.aad-tool;
+          himmelblau-tpm-daemon = pkgs.himmelblauTpm.daemon;
+          himmelblau-tpm-broker = pkgs.himmelblauTpm.broker;
+          himmelblau-tpm-sso    = pkgs.himmelblauTpm.sso;
+          himmelblau-tpm-pam    = pkgs.himmelblauTpm.pam;
+          himmelblau-tpm-nss    = pkgs.himmelblauTpm.nss;
+        });
+
+      checks = forAllSystems (_system: { });
     };
 }
+
