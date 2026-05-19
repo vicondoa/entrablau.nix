@@ -216,5 +216,22 @@ let
           };
     ' default.nix
   '';
+
+  # The upstream crate2nix-generated derivations don't set `meta.license`
+  # in a way that survives our crateOverride machinery, so stamp it
+  # explicitly on each workspace binary we expose. These outputs are a
+  # combined work of:
+  #   - Himmelblau (GPL-3.0-or-later, dominant)
+  #   - libhimmelblau (LGPL-3.0-or-later, statically linked)
+  #   - kanidm-hsm-crypto (MPL-2.0, statically linked)
+  # The combined-work license is GPL-3.0-or-later. See ../../THIRD-PARTY.md.
+  rawPackages = (import patchedSrc { inherit pkgs; }).packages;
 in
-  (import patchedSrc { inherit pkgs; }).packages
+pkgs.lib.mapAttrs
+  (_name: drv: drv.overrideAttrs (old: {
+    meta = (old.meta or { }) // {
+      license = pkgs.lib.licenses.gpl3Plus;
+      homepage = "https://github.com/himmelblau-idm/himmelblau";
+    };
+  }))
+  rawPackages

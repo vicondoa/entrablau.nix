@@ -128,7 +128,27 @@ only the TPM-enabled rebuild is gated.
 
 ## License
 
-[Apache-2.0](./LICENSE).
+This flake's own source — the NixOS modules under `nixos-modules/`,
+the packaging glue under `pkgs/himmelblau-tpm/`, the `flake.nix`
+wiring, and the examples — is licensed [Apache-2.0](./LICENSE).
+
+The **built outputs** (`pkgs.himmelblauTpm.*`,
+`packages.x86_64-linux.himmelblau-tpm*`) are derivative works of the
+upstream [Himmelblau] workspace (GPL-3.0-or-later) and are themselves
+GPL-3.0-or-later. Apache-2.0 is one-way-compatible with GPL-3.0, so
+the combination is clean, but anyone redistributing the **binaries**
+(for example in a binary cache or a closed-source NixOS image) must
+comply with GPL-3.0's source-availability obligations.
+
+Consumers who let Nix build Himmelblau on-host from source satisfy
+that obligation automatically: the upstream source lives in
+`/nix/store/*-source` and is reachable from the resulting closure.
+
+The two vendored crate patches keep their respective upstream
+licenses — `libhimmelblau` 0.8.18 is LGPL-3.0-or-later;
+`kanidm-hsm-crypto` 0.3.6 is MPL-2.0. Both are GPL-3.0-compatible.
+
+Full breakdown: [THIRD-PARTY.md](./THIRD-PARTY.md).
 
 [vicondoa/nixling]: https://github.com/vicondoa/nixling
 [Himmelblau]: https://github.com/himmelblau-idm/himmelblau
