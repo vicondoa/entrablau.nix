@@ -9,10 +9,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial flake skeleton (Apache-2.0, x86_64-linux + aarch64-linux).
-- This CHANGELOG.
+- **`nixos-modules/`** — framework-agnostic NixOS module set, lifted
+  from `/etc/nixos/modules/nixling/entra-id.nix` and split by
+  concern:
+  - `nixos-modules/default.nix` declares the `nixosEntraId.*`
+    option tree and aggregates the two implementation files below.
+  - `nixos-modules/himmelblau.nix` — Himmelblau workspace (PAM /
+    NSS / broker / daemon / user-map / Firefox SSO + pinentry-qt
+    wiring).
+  - `nixos-modules/intune-compliance.nix` — Intune device-
+    compliance shimming (fake DMI / `/etc/os-release` bind-mounts,
+    `FileDescriptorStoreMax=1` for PRT survival,
+    `RestrictAddressFamilies` widening for the tasks daemon's
+    federation lookups, `ReadWritePaths` extension for ScriptsCSE).
+- **`pkgs/himmelblau-tpm/`** — vendored TPM-enabled rebuild of
+  Himmelblau (was `modules/nixling/ext/himmelblau-tpm/`). Patches
+  the upstream `Cargo.nix` to propagate the `tpm` cargo feature to
+  every workspace binary, plus two crate-source patches
+  (`libhimmelblau` PEM-CSR wrapping + `kanidm-hsm-crypto` X.509v3
+  KeyUsage / ExtendedKeyUsage extensions) that real-world Intune
+  enrolment requires.
+- **`flake.nix`**:
+  - `nixosModules.default` is now a real module (imports the
+    upstream Himmelblau NixOS module + our two new modules and
+    applies the himmelblau-tpm overlay via `nixpkgs.overlays`).
+  - `overlays.default` exposes `pkgs.himmelblauTpm` (an attrset of
+    `{ daemon, broker, sso, pam, nss, aad-tool }`).
+  - `packages.x86_64-linux.himmelblau-tpm` builds the TPM-enabled
+    `aad-tool` diagnostic CLI; sub-binaries are exposed
+    individually as `himmelblau-tpm-{daemon,broker,sso,pam,nss}`.
+  - New input pin: `himmelblau` at upstream rev `b3c48849`, matching
+    the `/etc/nixos` lock at extract time (the sed patches in
+    `pkgs/himmelblau-tpm/` anchor on source lines from that rev).
+- **`examples/bare-metal-host/`** — minimal real flake demonstrating
+  `nixosEntraId.*` on a non-VM NixOS host. `nix flake check` and
+  `nix eval ...drvPath` are both clean.
+- **`examples/inside-nixling-vm/`** — README-only sketch showing the
+  consumer-side composition with [vicondoa/nixling].
+
+### Changed
+
+- Option namespace rename: `nixling.entra-id.*` → `nixosEntraId.*`.
+  Rationale: the new flake is framework-agnostic, so it cannot
+  reference "nixling" in its public API. `fakeDmi` moves under
+  `nixosEntraId.intuneCompliance.fakeDmi`. New
+  `nixosEntraId.intuneCompliance.enable` (default `true`) gates the
+  compliance shimming so a pure Azure-AD-Registered BYOD host that
+  is not Intune-enrolled can disable it.
+- README: rewritten from "skeleton, planned-API" framing to "use
+  this today" framing, with the example imports + flake outputs
+  documented inline.
 
 ### Notes
 
-- The first tagged release will be `v0.1.0`, shipping in lockstep with
-  `vicondoa/nixling` v0.1.0.
+- Architecture: x86_64-linux only for the package outputs and the
+  overall verified path. The module set itself evaluates on
+  aarch64-linux for completeness, but `pkgs.himmelblauTpm` is gated
+  off there because the upstream Cargo.nix is x86_64-only and the
+  Intune CSR enrolment path was not verified on aarch64.
+- The first tagged release will be `v0.1.0`, shipping in lockstep
+  with `vicondoa/nixling` v0.1.0. Until then, pin to a commit SHA.
+
+## Bootstrap (pre-Phase-3, not tagged)
+
+### Added
+
+- Initial flake skeleton (Apache-2.0, x86_64-linux + aarch64-linux).
+- This CHANGELOG.
+
+[vicondoa/nixling]: https://github.com/vicondoa/nixling
+
