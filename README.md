@@ -25,6 +25,197 @@ via [Himmelblau], with Intune device-compliance shimming.
 
 See [CHANGELOG.md](./CHANGELOG.md).
 
+## Quick start (10-minute path)
+
+End-to-end: from a fresh NixOS workstation to "I'm logged in to my
+Entra tenant". Assumes you've already verified the prerequisites.
+
+### Prerequisites
+
+- NixOS unstable, **x86_64-linux** (the TPM-enabled Himmelblau
+  rebuild is gated to x86_64-linux only — see *Flake outputs* below)
+- A TPM 2.0 chip exposed at `/dev/tpmrm0`. Verify with:
+  ```bash
+  systemd-cryptenroll --tpm2-device=list
+  ```
+  You should see a `/dev/tpmrm0` entry. If not, enable TPM 2.0 in
+  firmware and check `dmesg | grep -i tpm` for kernel-level
+  initialisation errors.
+- A Microsoft Entra tenant + an admin who can register the device
+  (`Device Administrator` role at minimum; full `Global
+  Administrator` is overkill).
+- For Intune-managed tenants: a Conditional Access policy that does
+  NOT block Linux clients outright. The compliance shimming makes the
+  device *look* compatible to Intune; it does not bypass CA policies
+  that explicitly require `Windows` or `macOS` device-OS values.
+
+### Step 1: Add the flake input
+
+In your system flake.nix. **`v0.1.0` is not tagged yet** — until it
+is, pin to `main` or a commit SHA. Switch to `v0.1.0` once it ships.
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+
+    # Pre-v0.1.0: track main (or pin a commit SHA for stability).
+    nixos-entra-id.url = "github:vicondoa/nixos-entra-id";
+    # Once tagged, switch to:
+    # nixos-entra-id.url = "github:vicondoa/nixos-entra-id/v0.1.0";
+    nixos-entra-id.inputs.nixpkgs.follows = "nixpkgs";
+  };
+
+  outputs = { self, nixpkgs, nixos-entra-id, ... }: {
+    nixosConfigurations.workstation = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        ./hardware-configuration.nix
+        ./configuration.nix
+        nixos-entra-id.nixosModules.default
+      ];
+    };
+  };
+}
+```
+
+### Step 2: Configure the host
+
+In `configuration.nix` (or any module that's imported into the host).
+Replace the `TODO` markers with your tenant + user values; replace the
+`fakeDmi` values with output cribbed from a real supported device's
+`dmidecode -t system,baseboard`.
+
+```nix
+{ lib, ... }: {
+  # Required for /dev/tpmrm0 + the `tss` group that himmelblaud's
+  # DynamicUser is added to.
+  security.tpm2.enable = true;
+
+  users.users.alice = {                # TODO: rename `alice`
+    isNormalUser = true;
+    extraGroups = [ "wheel" ];
+  };
+
+  nixosEntraId = {
+    enable        = true;
+    domain        = [ "contoso.com" ]; # TODO: your tenant domain
+    userMap.alice = "alice@contoso.com"; # TODO: local-user -> UPN
+    joinType      = "join";            # "register" for BYOD
+    localUser     = "alice";           # TODO
+
+    intuneCompliance = {
+      enable = true;
+      fakeDmi = {                      # TODO: real supported device's DMI
+        sys_vendor   = "Contoso Corp.";
+        product_name = "ContosoBook 15";
+        board_vendor = "Contoso Corp.";
+        board_name   = "0XYZ1A";
+      };
+    };
+  };
+}
+```
+
+If you're on BYOD / Azure-AD-Registered (not Intune-enrolled), set
+`intuneCompliance.enable = false` and skip the `fakeDmi` block.
+
+### Step 3: Build BEFORE switching
+
+```bash
+sudo -A nixos-rebuild build --flake .#workstation
+```
+
+This produces `./result` (a system closure) without touching the
+running system. If this fails — fix it now; `switch` will only be
+harder to recover from. The build pulls in the TPM-enabled Himmelblau
+rebuild (~10 minutes of Rust compile on a first build; cached after).
+
+### Step 4: Switch
+
+```bash
+sudo -A nixos-rebuild switch --flake .#workstation
+```
+
+Activates the new generation. After this completes, `himmelblaud.service`
+should be running.
+
+### Step 5: Trigger enrolment
+
+The Himmelblau workspace doesn't have a standalone `enroll` command at
+the pinned upstream rev — enrolment happens lazily on the first
+authentication. The easiest way to drive it deliberately is
+`auth-test`, which runs the same enrol-then-authenticate flow that
+PAM would on a graphical login:
+
+```bash
+sudo aad-tool auth-test --name alice@contoso.com
+```
+
+This is an interactive flow: a `pinentry-qt` window pops up for the
+password / Hello PIN / MFA prompt. On success, the device receives a
+client cert from the `Microsoft Intune Beta MDM Device CA` and the
+sealed PRT is stored under `/var/lib/himmelblaud/`. (Running as root
+is required when authenticating as a user other than the one calling
+`aad-tool`.)
+
+Equivalently, you can just `loginctl terminate-user $USER` and log in
+again at SDDM/getty as `alice@contoso.com`; the PAM stack triggers
+the same enrolment path.
+
+### Step 6: Verify
+
+```bash
+# Show what aad-tool sees of the cached device state.
+aad-tool tpm           # 'Hardware TPM supported: true' if step 5 worked
+aad-tool status        # confirms himmelblaud is reachable
+aad-tool auth-test --name alice@contoso.com  # idempotent re-auth
+
+# Service health.
+systemctl status himmelblaud
+systemctl status himmelblaud-tasks       # Intune policy/compliance daemon
+systemctl --user status himmelblau-broker  # dbus-activated, user scope
+
+# Logs from the last few minutes.
+journalctl -u himmelblaud -u himmelblaud-tasks --since "5 minutes ago"
+
+# NSS lookup — should resolve the Entra UPN as a local user.
+getent passwd alice@contoso.com
+```
+
+Try logging out and back in as your mapped user — your password is now
+the Entra credential, and the cached PRT survives across restarts via
+the `FileDescriptorStoreMax=1` shim.
+
+### Common gotchas
+
+- **`aad-tool tpm` reports "Hardware TPM supported was not enabled in
+  this build"** → you're somehow not running the
+  `pkgs.himmelblauTpm.aad-tool` from this flake. Check that
+  `nixosModules.default` is actually imported and the rebuild used the
+  resulting overlay. `which aad-tool` should resolve to
+  `/run/current-system/sw/bin/aad-tool` → a `/nix/store/*-rust_aad-tool-*`
+  path.
+- **`himmelblaud` exits with `Permission denied` opening
+  `/dev/tpmrm0`** → `security.tpm2.enable` is off, or the `tss` group
+  isn't being created by the udev rule. Reboot once after enabling
+  `security.tpm2.enable` (the rule fires at boot).
+- **`auth-test` fails with `400 Bad Request: Value must be a valid
+  PEM-encoded PKCS#10 CSR`** → you're hitting a strict Conditional-
+  Access tenant. The two crate patches in `pkgs/himmelblau-tpm/`
+  exist precisely to make this pass; if it still fails, capture the
+  failing request body with `RUST_LOG=trace aad-tool auth-test …` and
+  file an issue.
+- **Firefox SSO doesn't kick in** → check that `programs.firefox.enable`
+  is true (the upstream Himmelblau module sets it; if you've overridden
+  it to false, the `linux-entra-sso` extension policy won't take
+  effect). Re-open Firefox after the rebuild.
+- **`himmelblaud-tasks` logs `Failed to apply Intune policies:
+  federation provider not set`** → this means the `intune-compliance`
+  module's `RestrictAddressFamilies` widening didn't apply. Confirm
+  `nixosEntraId.intuneCompliance.enable = true` and rebuild.
+
+
 ## What this is
 
 A self-contained NixOS module you can use in any NixOS
