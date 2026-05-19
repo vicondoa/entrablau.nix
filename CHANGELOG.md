@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.1.0] - 2026-05-19
+
+First public alpha release.
+
+**Scope:** Framework-agnostic NixOS modules for joining a VM (or any
+NixOS host) to Microsoft Entra ID via Himmelblau, with optional
+Intune device-compliance shimming.
+
+**Composition:** designed to be imported per-VM via
+`nixling.vms.<vm>.config.imports = [ inputs.nixos-entra-id.nixosModules.default ]`
+when composed with [`vicondoa/nixling`][nixling] (also v0.1.0).
+Standalone use on a bare-metal NixOS host is also supported; see
+`examples/bare-metal-host/`.
+
+**Stable in v0.1.0:**
+
+- `nixosModules.default` (the `nixosEntraId.*` option tree).
+- `nixosEntraId.himmelblau.*` — PAM / NSS / broker / daemon /
+  user-map / Firefox SSO / pinentry-qt wiring.
+- `nixosEntraId.intuneCompliance.*` — fake DMI / `/etc/os-release`
+  bind-mount, `FileDescriptorStoreMax=1` for PRT survival,
+  `RestrictAddressFamilies` widening, `ReadWritePaths` extension.
+- `pkgs.himmelblau-tpm` — TPM-enabled Himmelblau build (workspace
+  cargo feature + `libhimmelblau` PEM-CSR wrapping + `kanidm-hsm-crypto`
+  X.509v3 KeyUsage / ExtendedKeyUsage patches).
+- `flake.checks.<sys>.{eval-bare-metal,eval-disabled,eval-intune-off,
+  himmelblau-tpm-drv}` — five gated outputs (four x86_64 + one
+  aarch64 eval-disabled).
+- License attribution: Apache-2.0 (this flake) + GPL-3.0-or-later
+  (Himmelblau-derived outputs in `pkgs/himmelblau-tpm/`).
+  See `THIRD-PARTY.md`.
+
+[nixling]: https://github.com/vicondoa/nixling
+
 ### Added
 
 - **`nixos-modules/`** — framework-agnostic NixOS module set, lifted
