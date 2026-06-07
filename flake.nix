@@ -193,6 +193,10 @@
           assertIntuneOff =
             if !intuneOff.config.services.himmelblau.enable
             then throw "F1 eval-intune-off: services.himmelblau.enable must be true when nixosEntraId.enable=true (Himmelblau is the whole point)"
+            else if !(nixpkgs.lib.elem "/bin/bash" intuneOff.config.environment.shells)
+            then throw "F1 eval-intune-off: /bin/bash must be listed in environment.shells for Entra NSS shell compatibility"
+            else if !(nixpkgs.lib.elem "L+ /bin/bash - - - - /run/current-system/sw/bin/bash" intuneOff.config.systemd.tmpfiles.rules)
+            then throw "F1 eval-intune-off: /bin/bash tmpfiles symlink must be installed for Entra NSS shell compatibility"
             else if intuneOff.config.environment.etc ? "himmelblau/fake-os-release"
             then throw "F1 eval-intune-off: /etc/himmelblau/fake-os-release must NOT be defined when intuneCompliance.enable=false (compliance shim leaking into the off branch)"
             # The widening of RestrictAddressFamilies is a compliance-shim
@@ -241,4 +245,3 @@
         }));
     };
 }
-

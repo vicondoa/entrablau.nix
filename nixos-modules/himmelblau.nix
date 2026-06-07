@@ -84,6 +84,17 @@ in
         (lib.mapAttrsToList (local: upn: "${local}:${upn}") cfg.userMap)
       + "\n";
 
+    # Himmelblau/Entra NSS rows commonly carry /bin/bash as the
+    # account shell. NixOS exposes bash through /run/current-system/sw/bin
+    # by default, so keep the conventional path present and listed in
+    # /etc/shells. Without this, himmelblaud can reject otherwise-valid
+    # cached Entra accounts with "User shell is not present" and fall back
+    # to interactive security-key authentication.
+    environment.shells = [ "/bin/bash" ];
+    systemd.tmpfiles.rules = [
+      "L+ /bin/bash - - - - /run/current-system/sw/bin/bash"
+    ];
+
     # himmelblaud runs with DynamicUser = yes (from upstream module).
     # /dev/tpmrm0 is mode 0660 owned by `tss` group (set by NixOS's
     # security.tpm2.enable udev rule). Grant supplementary group

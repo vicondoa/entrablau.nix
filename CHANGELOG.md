@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Entra-backed NSS accounts whose shell is `/bin/bash` now work out of the
+  box on NixOS. The module adds `/bin/bash` to `/etc/shells` and creates a
+  tmpfiles symlink to `/run/current-system/sw/bin/bash`, preventing
+  himmelblaud from rejecting cached accounts and falling back to interactive
+  security-key authentication.
+
 ## [0.1.0] - 2026-05-19
 
 First public alpha release.
@@ -144,4 +152,3 @@ Standalone use on a bare-metal NixOS host is also supported; see
 - This CHANGELOG.
 
 [vicondoa/nixling]: https://github.com/vicondoa/nixling
-
