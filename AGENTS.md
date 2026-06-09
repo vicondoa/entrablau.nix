@@ -53,7 +53,7 @@ nix flake check --no-build
 nix build .#himmelblau-tpm
 
 # Evaluate the bare-metal-host example
-nix eval ./examples/bare-metal-host#nixosConfigurations.bare-metal-host.config.system.build.toplevel.drvPath
+nix eval ./examples/bare-metal-host#nixosConfigurations.demo.config.system.build.toplevel.drvPath
 
 # Content/reference guard (no stale names, no framework-specific docs)
 bash scripts/check-wording.sh
