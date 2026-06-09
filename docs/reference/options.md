@@ -97,22 +97,24 @@ option names will fail to evaluate after upgrading to v1.0.0.
 
 **New in v1.0.0.**
 
-- **Type:** `attrsOf string`
-- **Default:** `{}`
-- **Description:** `/etc/os-release` field overrides bind-mounted into
-  the Himmelblau service namespaces. Keys are os-release field names
-  (e.g., `ID`, `VERSION_ID`, `NAME`). Values replace the NixOS
-  defaults only inside the Himmelblau service mount namespaces.
+- **Type:** `lines`
+- **Default:** complete Ubuntu 22.04.4 LTS `/etc/os-release` text.
+- **Description:** `/etc/os-release` text bind-mounted into the
+  Himmelblau service namespaces. The host's real file is unchanged.
+  Omit this option to use the module default.
 
   Example:
   ```nix
-  osReleaseOverride = {
-    ID         = "ubuntu";
-    VERSION_ID = "22.04";
-  };
+  osReleaseOverride = ''
+    PRETTY_NAME="Ubuntu 22.04.4 LTS"
+    NAME="Ubuntu"
+    VERSION_ID="22.04"
+    VERSION="22.04.4 LTS (Jammy Jellyfish)"
+    VERSION_CODENAME=jammy
+    ID=ubuntu
+    ID_LIKE=debian
+  '';
   ```
-
-  The host's real `/etc/os-release` is unchanged.
 
 ---
 

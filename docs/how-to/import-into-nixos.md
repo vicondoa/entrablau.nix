@@ -85,10 +85,17 @@ effect.
         board_vendor = "Contoso Corp.";
         board_name   = "0XYZ1A";
       };
-      osReleaseOverride = {
-        ID         = "ubuntu";
-        VERSION_ID = "22.04";
-      };
+      # Optional: omit to use the module default. If set, provide a
+      # complete os-release file.
+      osReleaseOverride = ''
+        PRETTY_NAME="Ubuntu 22.04.4 LTS"
+        NAME="Ubuntu"
+        VERSION_ID="22.04"
+        VERSION="22.04.4 LTS (Jammy Jellyfish)"
+        VERSION_CODENAME=jammy
+        ID=ubuntu
+        ID_LIKE=debian
+      '';
     };
   };
 }
@@ -98,9 +105,10 @@ effect.
 recognizes as a compliant device. Obtain these from a reference device
 that is already Intune-compliant: `dmidecode -t system,baseboard`.
 
-**`osReleaseOverride`:** supply `ID` and `VERSION_ID` values that
-match a supported OS in your Intune compliance policy. These are
-bind-mounted only inside the Himmelblau service namespaces.
+**`osReleaseOverride`:** supply complete `/etc/os-release` text that
+matches a supported OS in your Intune compliance policy. This file is
+bind-mounted only inside the Himmelblau service namespaces. Omit the
+option to use the module default.
 
 For BYOD / Azure-AD-Registered (not Intune-enrolled), set
 `intuneCompliance.enable = false` and omit both override blocks.

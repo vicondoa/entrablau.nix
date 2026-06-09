@@ -75,10 +75,17 @@ Then in your `configuration.nix`:
         board_vendor = "Contoso Corp.";
         board_name   = "0XYZ1A";
       };
-      osReleaseOverride = {
-        ID         = "ubuntu";
-        VERSION_ID = "22.04";
-      };
+      # Optional: omit to use the module default. If set, provide a
+      # complete os-release file.
+      osReleaseOverride = ''
+        PRETTY_NAME="Ubuntu 22.04.4 LTS"
+        NAME="Ubuntu"
+        VERSION_ID="22.04"
+        VERSION="22.04.4 LTS (Jammy Jellyfish)"
+        VERSION_CODENAME=jammy
+        ID=ubuntu
+        ID_LIKE=debian
+      '';
     };
   };
 }
@@ -214,4 +221,3 @@ licenses — `libhimmelblau` 0.8.18 is LGPL-3.0-or-later;
 Full breakdown: [THIRD-PARTY.md](./THIRD-PARTY.md).
 
 [Himmelblau]: https://github.com/himmelblau-idm/himmelblau
-

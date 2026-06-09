@@ -17,6 +17,7 @@ FAIL=0
 
 # Scratch directory inside the repo (not /tmp)
 SCRATCH="$REPO_ROOT/tests/.scratch"
+rm -rf "$SCRATCH"
 mkdir -p "$SCRATCH"
 cleanup() { rm -rf "$SCRATCH"; }
 trap cleanup EXIT
