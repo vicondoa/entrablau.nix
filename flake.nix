@@ -134,8 +134,8 @@
           # throws and the check fails. We strip the string context
           # via `unsafeDiscardStringContext` so the toplevel drv is
           # not pulled as a build input -- the goal is "eval-only,
-          # don't actually build the system" so `nix flake check
-          # --no-build` succeeds without realising a NixOS system.
+          # don't actually build the system" so these checks avoid
+          # realising full NixOS system closures.
           mkEvalCheck = name: config: pkgs.runCommand name {
             preferLocalBuild = true;
             allowSubstitutes = false;
@@ -212,8 +212,8 @@
           # F1 evaluation-time assertions. These are not module
           # asserts -- a module assertion fires only when the
           # toplevel is built. We want errors visible at
-          # `nix flake check --no-build`, so the assertions go
-          # here and `throw` synchronously during attrset eval.
+          # flake evaluation, so the assertions go here and `throw`
+          # synchronously during attrset eval.
           assertDisabled =
             if disabled.config.services.himmelblau.enable
             then throw "F1 eval-disabled: services.himmelblau.enable must be false when entrablau.enable=false (the module is leaking config into the disabled branch)"

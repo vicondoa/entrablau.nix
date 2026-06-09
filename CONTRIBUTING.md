@@ -47,8 +47,9 @@ experimental-features = nix-command flakes
 Run all checks before submitting a PR:
 
 ```bash
-# Nix evaluation checks (fast — no Rust compile)
-nix flake check --no-build
+# Nix evaluation checks (realizes small source-patch derivations, no
+# Himmelblau Rust compile)
+nix --extra-experimental-features 'nix-command flakes' flake check --all-systems
 
 # Full package build (slow first time; Rust compile)
 nix build .#himmelblau-tpm

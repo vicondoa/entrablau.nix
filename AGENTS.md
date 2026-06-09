@@ -46,8 +46,9 @@ Run these before opening a PR and after merging to confirm nothing is
 broken. All commands run from the repository root.
 
 ```bash
-# Evaluate all flake checks (no Rust compile — just Nix evaluation)
-nix flake check --no-build
+# Evaluate all flake checks (realizes small source-patch derivations, no
+# Himmelblau Rust compile)
+nix --extra-experimental-features 'nix-command flakes' flake check --all-systems
 
 # Build the TPM-enabled aad-tool (full Rust compile; ~10 min cold)
 nix build .#himmelblau-tpm

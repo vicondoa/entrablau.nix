@@ -8,7 +8,7 @@ v1.0.0 and the migration table from v0.1.0.
 | Old option (v0.1.0) | New option (v1.0.0) | Action required |
 |---|---|---|
 | legacy DMI attribute under `intuneCompliance` | `intuneCompliance.dmiOverride` | Rename the attribute in your configuration. No alias exists. |
-| _(absent)_ | `intuneCompliance.osReleaseOverride` | Optional. Set to override `/etc/os-release` fields in the Himmelblau service namespace. |
+| _(absent)_ | `intuneCompliance.osReleaseOverride` | Optional. Supply whole-file `/etc/os-release` text for the Himmelblau service namespace. |
 | legacy repository input | `inputs.entrablau` | Update your flake input name and URL. |
 | legacy repository URL | `github:vicondoa/entrablau.nix/v1.0.0` | Update the flake URL. |
 
@@ -130,5 +130,6 @@ option names will fail to evaluate after upgrading to v1.0.0.
 | `checks.x86_64-linux.eval-bare-metal` | Nix eval of `examples/bare-metal-host/` |
 | `checks.x86_64-linux.eval-disabled` | Asserts module is a no-op when `enable = false` |
 | `checks.x86_64-linux.eval-intune-off` | Asserts compliance shims do not fire when `intuneCompliance.enable = false` |
+| `checks.x86_64-linux.eval-intune-on` | Asserts compliance shims emit the OS-release and DMI namespace binds, including custom `osReleaseOverride` text |
 | `checks.x86_64-linux.himmelblau-tpm-drv` | Asserts the TPM-enabled derivation evaluates (no build) |
 | `checks.aarch64-linux.eval-disabled` | Module eval on aarch64 (package build not supported) |
