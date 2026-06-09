@@ -7,13 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2026-06-01
 
-First stable release. The option namespace (`nixosEntraId.*`) is now
-stable. No compatibility aliases for pre-1.0 option paths.
+First stable release. The option namespace (`entrablau.*`) is now
+stable; the pre-1.0 option root has been renamed (see migration table
+below). No compatibility aliases for pre-1.0 option paths.
 
 ### Migration from 0.1.0
 
 | Old (0.1.0) | New (1.0.0) | Notes |
 |---|---|---|
+| legacy option root | `entrablau.*` | **Breaking.** Rename the root key in your NixOS configuration to `entrablau`. No alias. |
 | legacy DMI attribute under `intuneCompliance` | `intuneCompliance.dmiOverride` | Renamed for clarity; no alias |
 | _(absent)_ | `intuneCompliance.osReleaseOverride` | New — explicit OS-release field overrides |
 | legacy repository input | `inputs.entrablau.url = "github:vicondoa/entrablau.nix/v1.0.0"` | Repository renamed |
@@ -23,11 +25,11 @@ full option reference and migration table.
 
 ### Added
 
-- `nixosEntraId.intuneCompliance.dmiOverride` — replaces the pre-1.0
+- `entrablau.intuneCompliance.dmiOverride` — replaces the pre-1.0
   DMI attribute.
   Administrator-declared DMI field values bind-mounted into the
   Himmelblau service mount namespaces.
-- `nixosEntraId.intuneCompliance.osReleaseOverride` — explicit
+- `entrablau.intuneCompliance.osReleaseOverride` — explicit
   per-field `/etc/os-release` overrides supplied to Himmelblau
   service namespaces.
 - `docs/` tree: explanation, reference (options, GitHub Actions),
@@ -40,7 +42,8 @@ full option reference and migration table.
 ### Changed
 
 - **Repository renamed** to `vicondoa/entrablau.nix`. The public
-  option root (`nixosEntraId.*`) is unchanged.
+  option root has been renamed to `entrablau.*` (see migration
+  table above).
 - `README.md` rewritten for v1.0 with updated quick-start, What's
   Included table, and repository layout.
 - `CHANGELOG.md` consolidated; pre-1.0 bootstrap entries removed.
@@ -65,10 +68,10 @@ shimming.
 
 **Stable in v0.1.0:**
 
-- `nixosModules.default` (the `nixosEntraId.*` option tree).
-- `nixosEntraId.himmelblau.*` — PAM / NSS / broker / daemon /
+- `nixosModules.default` (the `entrablau.*` option tree).
+- `entrablau.himmelblau.*` — PAM / NSS / broker / daemon /
   user-map / Firefox SSO / pinentry-qt wiring.
-- `nixosEntraId.intuneCompliance.*` — DMI / `/etc/os-release`
+- `entrablau.intuneCompliance.*` — DMI / `/etc/os-release`
   bind-mount, `FileDescriptorStoreMax=1` for PRT survival,
   `RestrictAddressFamilies` widening, `ReadWritePaths` extension.
 - `pkgs.himmelblau-tpm` — TPM-enabled Himmelblau build (workspace

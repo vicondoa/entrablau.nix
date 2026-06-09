@@ -30,7 +30,7 @@ The module set:
 - `entrablau.nixosModules.default` — imports the upstream Himmelblau
   NixOS module, the two concern files, and applies the
   `himmelblau-tpm` overlay.
-- `configuration.nix` — declares the host's `nixosEntraId.*` shape:
+- `configuration.nix` — declares the host's `entrablau.*` shape:
   one tenant (`contoso.com`), one mapped user (`alice`), `join` type
   (Intune-enrolled), and a `dmiOverride` block with administrator-
   declared DMI values.

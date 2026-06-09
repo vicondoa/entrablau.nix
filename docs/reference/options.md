@@ -1,6 +1,6 @@
-# Option reference — nixosEntraId.*
+# Option reference — entrablau.*
 
-This document covers the full `nixosEntraId.*` option tree as of
+This document covers the full `entrablau.*` option tree as of
 v1.0.0 and the migration table from v0.1.0.
 
 ## Migration table: v0.1.0 → v1.0.0
@@ -17,7 +17,7 @@ option names will fail to evaluate after upgrading to v1.0.0.
 
 ## Top-level options
 
-### `nixosEntraId.enable`
+### `entrablau.enable`
 
 - **Type:** `bool`
 - **Default:** `false`
@@ -25,14 +25,14 @@ option names will fail to evaluate after upgrading to v1.0.0.
   sub-options are ignored and no services, PAM entries, or NSS
   configuration is activated.
 
-### `nixosEntraId.domain`
+### `entrablau.domain`
 
 - **Type:** `list of string`
 - **Default:** `[]`
 - **Description:** One or more Entra tenant domain names (e.g.,
   `[ "contoso.com" ]`). Passed to the Himmelblau configuration.
 
-### `nixosEntraId.joinType`
+### `entrablau.joinType`
 
 - **Type:** `enum [ "join" "register" ]`
 - **Default:** `"join"`
@@ -40,14 +40,14 @@ option names will fail to evaluate after upgrading to v1.0.0.
 - **Description:** `"join"` for Intune-enrolled (Azure AD joined)
   devices. `"register"` for BYOD (Azure AD registered) devices.
 
-### `nixosEntraId.localUser`
+### `entrablau.localUser`
 
 - **Type:** `string`
 - **Default:** `""`
 - **Description:** The local NixOS user name that is the primary Entra
   user on this host. Used by `aad-tool` and the enrolment flow.
 
-### `nixosEntraId.userMap`
+### `entrablau.userMap`
 
 - **Type:** `attrsOf string`
 - **Default:** `{}`
@@ -57,9 +57,9 @@ option names will fail to evaluate after upgrading to v1.0.0.
 
 ---
 
-## `nixosEntraId.intuneCompliance`
+## `entrablau.intuneCompliance`
 
-### `nixosEntraId.intuneCompliance.enable`
+### `entrablau.intuneCompliance.enable`
 
 - **Type:** `bool`
 - **Default:** `true`
@@ -67,7 +67,7 @@ option names will fail to evaluate after upgrading to v1.0.0.
   bind-mounts, sandbox relaxations). Set to `false` for BYOD /
   Azure-AD-Registered hosts that are not Intune-enrolled.
 
-### `nixosEntraId.intuneCompliance.dmiOverride`
+### `entrablau.intuneCompliance.dmiOverride`
 
 **Replaces the pre-1.0 DMI attribute. No alias.**
 
@@ -93,7 +93,7 @@ option names will fail to evaluate after upgrading to v1.0.0.
   `/sys/class/dmi/id/<key>` in the service's private mount namespace.
   The host's real sysfs is unchanged.
 
-### `nixosEntraId.intuneCompliance.osReleaseOverride`
+### `entrablau.intuneCompliance.osReleaseOverride`
 
 **New in v1.0.0.**
 

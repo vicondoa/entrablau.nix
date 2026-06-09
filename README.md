@@ -12,7 +12,7 @@ systemd sandbox overrides that real Intune enrolment requires.
 
 ## Project status
 
-- **Stage:** v1.0 — stable public API (`nixosEntraId.*`)
+- **Stage:** v1.0 — stable public API (`entrablau.*`)
 - **Maintainer:** one person
 - **Tested on:** NixOS unstable, x86_64-linux
 - **CI:** `nix flake check` gate; see [`docs/reference/github-actions.md`](./docs/reference/github-actions.md)
@@ -60,7 +60,7 @@ Then in your `configuration.nix`:
     extraGroups = [ "wheel" ];
   };
 
-  nixosEntraId = {
+  entrablau = {
     enable        = true;
     domain        = [ "contoso.com" ];
     userMap.alice = "alice@contoso.com";
@@ -128,7 +128,7 @@ For a detailed walkthrough see
   is `true`; the upstream Himmelblau module sets it but a local
   override to `false` disables the SSO extension policy.
 - **`himmelblaud-tasks` logs `federation provider not set`** →
-  `nixosEntraId.intuneCompliance.enable` is `false` or the rebuild
+  `entrablau.intuneCompliance.enable` is `false` or the rebuild
   didn't complete. The `RestrictAddressFamilies` widening is part of
   the compliance module.
 
@@ -142,9 +142,9 @@ For a detailed walkthrough see
 | TPM-enabled Himmelblau packages | `pkgs.himmelblauTpm.*` — workspace rebuilt with the `tpm` cargo feature; two vendored crate patches for Intune CSR compatibility |
 | Firefox SSO + native-messaging | `linux-entra-sso` WebExtension + managed policy, inherited from the upstream Himmelblau NixOS module |
 | pinentry / UI glue | `pinentry-qt` wired for interactive Entra authentication prompts |
-| User-map | `/etc/himmelblau/user-map` generated from `nixosEntraId.userMap` |
+| User-map | `/etc/himmelblau/user-map` generated from `entrablau.userMap` |
 | Intune compliance service configuration | `himmelblaud-tasks.service` sandbox overrides (`RestrictAddressFamilies`, `ReadWritePaths`, `FileDescriptorStoreMax=1` for PRT survival) |
-| DMI / OS-release overrides | `nixosEntraId.intuneCompliance.dmiOverride` and `osReleaseOverride` supply administrator-declared DMI and OS-release values bind-mounted **only into the Himmelblau service mount namespaces** |
+| DMI / OS-release overrides | `entrablau.intuneCompliance.dmiOverride` and `osReleaseOverride` supply administrator-declared DMI and OS-release values bind-mounted **only into the Himmelblau service mount namespaces** |
 
 ## Repository layout
 

@@ -34,7 +34,7 @@
 
   # The Entra ID config. Single tenant, Intune-enrolled,
   # one mapped user.
-  nixosEntraId = {
+  entrablau = {
     enable = true;
     domain = [ "contoso.com" ];
     userMap.alice = "alice@contoso.com";

@@ -12,7 +12,7 @@
    OS-release) are bind-mounted **only** into the Himmelblau service
    mount namespaces, not into the global mount namespace. No other
    process sees the overridden values.
-4. **Stable public API:** the `nixosEntraId.*` option tree is the only
+4. **Stable public API:** the `entrablau.*` option tree is the only
    public interface. Internal implementation details (file paths,
    service names, overlay attrset structure) are not part of the
    public API and may change between minor versions.
@@ -34,7 +34,7 @@ at the TPM-enabled rebuild (`pkgs.himmelblauTpm`) via a `nixpkgs.overlays`
 entry and wires the user-map file.
 
 The `intune-compliance.nix` module is conditionally activated by
-`nixosEntraId.intuneCompliance.enable` (default `true`). It:
+`entrablau.intuneCompliance.enable` (default `true`). It:
 
 - Generates override files from `dmiOverride` and `osReleaseOverride`
   option values into the Nix store.
@@ -66,7 +66,7 @@ upstream releases a new version, the patches must be re-verified.
 
 ## User-map
 
-`nixosEntraId.userMap` is an attrset mapping local NixOS user names to
+`entrablau.userMap` is an attrset mapping local NixOS user names to
 Entra UPNs. The module renders this to `/etc/himmelblau/user-map`, which
 the Himmelblau daemon uses to resolve PAM authentication to NSS accounts.
 The mapping is many-to-one: multiple local users may map to the same UPN

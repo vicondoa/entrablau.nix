@@ -30,7 +30,7 @@ within 90 days of the initial report, faster for critical issues.
 
 ### In scope
 
-- **Nix module evaluation security:** a malicious `nixosEntraId`
+- **Nix module evaluation security:** a malicious `entrablau`
   option value that causes unexpected system configuration.
 - **Service sandbox escapes:** a misconfiguration in the systemd
   sandbox directives that grants the Himmelblau services broader
@@ -55,8 +55,8 @@ within 90 days of the initial report, faster for critical issues.
 
 ## Authorized-use disclaimer for DMI and OS-release overrides
 
-`nixosEntraId.intuneCompliance.dmiOverride` and
-`nixosEntraId.intuneCompliance.osReleaseOverride` allow a NixOS
+`entrablau.intuneCompliance.dmiOverride` and
+`entrablau.intuneCompliance.osReleaseOverride` allow a NixOS
 system administrator to supply administrator-declared DMI field
 values and OS-release values that are presented to Himmelblau's
 service namespaces.

@@ -70,7 +70,7 @@ effect.
     extraGroups = [ "wheel" ];
   };
 
-  nixosEntraId = {
+  entrablau = {
     enable        = true;
     domain        = [ "contoso.com" ];        # your Entra tenant domain
     userMap.alice = "alice@contoso.com";       # local user -> Entra UPN
