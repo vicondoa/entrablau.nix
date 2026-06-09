@@ -23,6 +23,9 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
+      - name: Guard self-tests
+        run: bash tests/test-guards.sh
+
       - name: Workflow policy guard
         run: bash scripts/check-workflow-policy.sh
 

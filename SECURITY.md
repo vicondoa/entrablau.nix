@@ -83,10 +83,10 @@ documented here so administrators can make an informed decision.
 
 | Service | Directive | Value | Reason |
 |---|---|---|---|
-| `himmelblaud-tasks` | `RestrictAddressFamilies` | `AF_INET AF_INET6 AF_UNIX` | Federation provider lookup requires outbound network; base NixOS Himmelblau module restricts to `AF_UNIX` only |
-| `himmelblaud-tasks` | `ReadWritePaths` | `/var/lib/himmelblau` | ScriptsCSE policies write compliance artefacts here |
+| `himmelblaud-tasks` | `RestrictAddressFamilies` | `AF_UNIX AF_INET AF_INET6 AF_NETLINK` | Federation provider lookup requires outbound network; base NixOS Himmelblau module restricts to `AF_UNIX` only |
+| `himmelblaud-tasks` | `ReadWritePaths` | `/var/cache/himmelblau-policies`, `/etc/cron.d` | ScriptsCSE stages Intune scripts under the policies cache and writes per-policy cron entries to `/etc/cron.d` |
 | `himmelblaud` | `FileDescriptorStoreMax` | `1` | Keeps the PRT file descriptor open across service restarts for credential survival |
-| `himmelblaud`, `himmelblaud-tasks` | `BindPaths` | DMI sysfs paths and `/etc/os-release` | Override files from Nix store are bind-mounted into these namespaces only |
+| `himmelblaud`, `himmelblaud-tasks` | `BindReadOnlyPaths` | `/etc/os-release`, `/usr/lib/os-release`, DMI sysfs override paths | Override files from the Nix store are bind-mounted read-only into these namespaces only |
 
 No `PrivilegeEscalation`, `NoNewPrivileges`, or `CapabilityBoundingSet`
 relaxations are made. `ProtectSystem`, `ProtectHome`, and

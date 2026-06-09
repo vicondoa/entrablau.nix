@@ -1,39 +1,21 @@
 # GitHub Actions — CI and security posture
 
-> **Integration note:** This document describes the *intended* CI and
-> security posture for entrablau.nix. The CI/security branch
-> (`agent/ci-security`) owns `.github/` and is responsible for the
-> actual workflow implementation. Before merging either branch, the
-> integrator must reconcile this document with the real workflow files
-> to ensure they are consistent. Any discrepancy should be resolved by
-> updating this document (if the implementation is correct) or the
-> workflows (if the design has changed).
-
-## Intended workflow structure
+## Workflow structure
 
 ### `ci.yml` — main check workflow
 
-Triggered on: `push` to `main` and `release/*`; `pull_request` to
-`main`.
+Triggered on: `push` to `main`; `pull_request` (all targets).
 
-Jobs:
+Single job — `check` — runs on `ubuntu-latest`:
 
-| Job | Command | Purpose |
+| Step | Command | Purpose |
 |---|---|---|
-| `eval-checks` | `nix flake check --no-build` | Fast Nix evaluation of all check outputs; no Rust compile |
-| `build-himmelblau-tpm` | `nix build .#himmelblau-tpm` | Full TPM-enabled build; uses Nix cache to avoid cold compiles on repeat runs |
-| `lint-docs` | `rg` content checks (see below) | Asserts no stale repo-name, option-name, or framework references in owned docs files |
-
-### `security.yml` — dependency and secret scanning
-
-Triggered on: `push` to `main`; scheduled weekly.
-
-Jobs:
-
-| Job | Tool | Purpose |
-|---|---|---|
-| `dependency-review` | GitHub Dependency Review Action | Flags new vulnerable dependencies in `flake.lock` updates |
-| `secret-scan` | GitHub secret scanning (repository setting) | Blocks accidental credential commits |
+| Checkout | `actions/checkout` (SHA-pinned) | Fetch the repository |
+| Install Nix | `cachix/install-nix-action` (SHA-pinned) | Bootstrap Nix with flakes enabled |
+| Guard self-tests | `bash tests/test-guards.sh` | Validate that the CI guard scripts themselves behave correctly |
+| Workflow policy guard | `bash scripts/check-workflow-policy.sh` | Enforce SHA-pinning, no secrets, no self-hosted runners, no `pull_request_target` — for both workflow files and composite actions under `.github/actions/` |
+| Wording guard | `bash scripts/check-wording.sh` | Ensure no stale repo-name, option-name, or framework references in committed surfaces |
+| Nix flake check | `nix flake check --all-systems` | Full evaluation and build check across all supported systems |
 
 ## Security policies
 
@@ -45,8 +27,9 @@ Jobs:
 
 ### Action pinning
 
-All third-party GitHub Actions must be pinned to a full commit SHA,
-not a mutable tag. Example:
+All third-party GitHub Actions — including steps inside composite actions
+under `.github/actions/` — must be pinned to a full commit SHA, not a
+mutable tag. Example:
 
 ```yaml
 # Correct — pinned to SHA
@@ -56,8 +39,9 @@ uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 uses: actions/checkout@v4
 ```
 
-The CI/security branch agent is responsible for maintaining SHA pins
-when actions publish new releases.
+The `ci.yml` workflow policy guard (`scripts/check-workflow-policy.sh`)
+enforces SHA pinning at CI time for both workflow files and any composite
+actions under `.github/actions/`.
 
 ### Token permissions
 
@@ -78,16 +62,22 @@ Nix store caches may be used via `nix-community/cache-nix-action` or
 similar, pinned to a SHA. Cache keys must include the `flake.lock`
 hash to avoid stale Himmelblau build artefacts.
 
-## Content/reference guard
+## Guards
 
-CI runs the repository's leak-free wording/reference guard:
+CI runs the guard self-tests, workflow-policy guard, and wording guard
+in every check run:
 
 ```bash
+bash tests/test-guards.sh
+bash scripts/check-workflow-policy.sh
 bash scripts/check-wording.sh
 ```
 
-The guard constructs restricted patterns at runtime so the guard itself
-does not commit those terms. Any match in committed surfaces fails CI.
+The wording guard constructs restricted patterns at runtime so the guard
+itself does not commit those terms. Any match in committed surfaces fails CI.
+
+The workflow-policy guard scans both `.github/workflows/*.yml` and
+composite/local actions under `.github/actions/**/action.yml`.
 
 ## Branch protection
 
