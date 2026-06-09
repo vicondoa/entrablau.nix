@@ -29,7 +29,7 @@ vendored-crate patches applied on top.
 
 | Component | Upstream | License | Notes |
 |---|---|---|---|
-| Himmelblau workspace (aad-tool, daemon, broker, sso, pam, nss) | <https://github.com/himmelblau-idm/himmelblau> | GPL-3.0-or-later | The dominant component; sets the license of the combined output. Pinned to rev `b3c48849cc7b468e33b9e44bb1a1210e49e1391f` in this flake's `flake.lock`. |
+| Himmelblau workspace (aad-tool, daemon, broker, sso, pam, nss) | <https://github.com/himmelblau-idm/himmelblau> | GPL-3.0-or-later | The dominant component; sets the license of the combined output. Pinned rev is recorded in `flake.lock`. |
 | `libhimmelblau` 0.8.18 (vendored .crate, patched) | <https://gitlab.com/samba-team/libhimmelblau> | LGPL-3.0-or-later | Statically linked into the Himmelblau binaries. Patch: PEM-wrap the Intune device-enrolment CSR (see `pkgs/himmelblau-tpm/default.nix` for full rationale). |
 | `kanidm-hsm-crypto` 0.3.6 (vendored .crate, patched) | <https://github.com/kanidm/hsm-crypto> | MPL-2.0 | Statically linked into the Himmelblau binaries. Patch: add X.509v3 KeyUsage (critical) + ExtendedKeyUsage (clientAuth) extensions to the TPM-generated CSR (see `pkgs/himmelblau-tpm/default.nix`). |
 
@@ -59,8 +59,10 @@ it is part of the deployed system and worth noting.
 ## Trademark + endorsement disclaimer
 
 "Microsoft", "Entra", "Azure AD", and "Intune" are trademarks of
-Microsoft Corporation. This flake is not endorsed by, affiliated
-with, or supported by Microsoft, the Himmelblau project, NixOS, or
-Nixpkgs. See the top-level `README.md` "Project status" section.
+Microsoft Corporation. This project (`entrablau.nix`) is not endorsed
+by, affiliated with, or supported by Microsoft, the Himmelblau
+project, NixOS, or Nixpkgs. See the top-level `README.md` project
+status section.
 
 [`linux-entra-sso`]: https://github.com/siemens/linux-entra-sso
+
