@@ -1,7 +1,5 @@
-# Minimal NixOS host configuration demonstrating `nixos-entra-id` on
-# bare metal -- no microVM framework involved. The same module also
-# composes inside a nixling-managed VM (see
-# `examples/inside-nixling-vm/`).
+# Minimal NixOS host configuration demonstrating `entrablau.nix` on
+# bare metal -- no microVM framework involved.
 #
 # To eval:
 #   nix eval --no-write-lock-file \
@@ -12,19 +10,19 @@
 #   nix build --no-write-lock-file \
 #     path:./.#nixosConfigurations.demo.config.system.build.toplevel
 {
-  description = "Bare-metal NixOS host with nixos-entra-id";
+  description = "Bare-metal NixOS host with entrablau.nix";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixos-entra-id.url = "path:../..";
-    nixos-entra-id.inputs.nixpkgs.follows = "nixpkgs";
+    entrablau.url = "path:../..";
+    entrablau.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, nixos-entra-id, ... }: {
+  outputs = { self, nixpkgs, entrablau, ... }: {
     nixosConfigurations.demo = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
-        nixos-entra-id.nixosModules.default
+        entrablau.nixosModules.default
         ./configuration.nix
       ];
     };

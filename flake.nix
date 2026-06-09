@@ -166,6 +166,26 @@
             }
           ];
 
+          # Synthetic "intune-on" config -- compliance shim active
+          # with a minimal dmiOverride block.
+          intuneOn = mkSys [
+            {
+              nixosEntraId = {
+                enable = true;
+                domain = [ "example.invalid" ];
+                userMap.alice = "alice@example.invalid";
+                joinType = "join";
+                intuneCompliance = {
+                  enable = true;
+                  dmiOverride = {
+                    sys_vendor   = "Example Corp.";
+                    product_name = "ExampleBook 1";
+                  };
+                };
+              };
+            }
+          ];
+
           # The bare-metal example (examples/bare-metal-host/). We
           # reuse the same configuration.nix that the example flake
           # imports, so any future drift between "what the example
@@ -186,8 +206,10 @@
           assertDisabled =
             if disabled.config.services.himmelblau.enable
             then throw "F1 eval-disabled: services.himmelblau.enable must be false when nixosEntraId.enable=false (the module is leaking config into the disabled branch)"
+            else if disabled.config.environment.etc ? "himmelblau/os-release-override"
+            then throw "F1 eval-disabled: /etc/himmelblau/os-release-override must NOT be defined when nixosEntraId.enable=false (the intune-compliance branch is firing unconditionally)"
             else if disabled.config.environment.etc ? "himmelblau/fake-os-release"
-            then throw "F1 eval-disabled: /etc/himmelblau/fake-os-release must NOT be defined when nixosEntraId.enable=false (the intune-compliance branch is firing unconditionally)"
+            then throw "F1 eval-disabled: old path himmelblau/fake-os-release must not appear in evaluated config"
             else null;
 
           assertIntuneOff =
@@ -197,8 +219,10 @@
             then throw "F1 eval-intune-off: /bin/bash must be listed in environment.shells for Entra NSS shell compatibility"
             else if !(nixpkgs.lib.elem "L+ /bin/bash - - - - /run/current-system/sw/bin/bash" intuneOff.config.systemd.tmpfiles.rules)
             then throw "F1 eval-intune-off: /bin/bash tmpfiles symlink must be installed for Entra NSS shell compatibility"
+            else if intuneOff.config.environment.etc ? "himmelblau/os-release-override"
+            then throw "F1 eval-intune-off: /etc/himmelblau/os-release-override must NOT be defined when intuneCompliance.enable=false (compliance shim leaking into the off branch)"
             else if intuneOff.config.environment.etc ? "himmelblau/fake-os-release"
-            then throw "F1 eval-intune-off: /etc/himmelblau/fake-os-release must NOT be defined when intuneCompliance.enable=false (compliance shim leaking into the off branch)"
+            then throw "F1 eval-intune-off: old path himmelblau/fake-os-release must not appear in evaluated config"
             # The widening of RestrictAddressFamilies is a compliance-shim
             # behaviour and must also be off. The upstream module sets it
             # to the string "AF_UNIX"; our shim mkForce-overrides to a
@@ -211,6 +235,30 @@
             # (PRT survival across restarts). Off branch must not set it.
             else if (intuneOff.config.systemd.services.himmelblaud.serviceConfig.FileDescriptorStoreMax or null) != null
             then throw "F1 eval-intune-off: FileDescriptorStoreMax must NOT be set when intuneCompliance.enable=false"
+            else null;
+
+          assertIntuneOn =
+            let
+              etcCfg  = intuneOn.config.environment.etc;
+              svcAuth = intuneOn.config.systemd.services.himmelblaud.serviceConfig;
+              svcTask = intuneOn.config.systemd.services.himmelblaud-tasks.serviceConfig;
+              authBinds = svcAuth.BindReadOnlyPaths or [];
+              taskBinds = svcTask.BindReadOnlyPaths or [];
+              hasOsRelease = s: nixpkgs.lib.any (b: nixpkgs.lib.hasPrefix "/etc/himmelblau/os-release-override:" b) s;
+              hasDmiOverride = s: nixpkgs.lib.any (b: nixpkgs.lib.hasInfix "dmi-override" b) s;
+            in
+            if !(etcCfg ? "himmelblau/os-release-override")
+            then throw "F1 eval-intune-on: /etc/himmelblau/os-release-override must be defined when intuneCompliance.enable=true"
+            else if etcCfg ? "himmelblau/fake-os-release"
+            then throw "F1 eval-intune-on: old path himmelblau/fake-os-release must not appear in evaluated config"
+            else if !(hasOsRelease authBinds)
+            then throw "F1 eval-intune-on: himmelblaud BindReadOnlyPaths must include os-release-override bind mount"
+            else if !(hasOsRelease taskBinds)
+            then throw "F1 eval-intune-on: himmelblaud-tasks BindReadOnlyPaths must include os-release-override bind mount"
+            else if !(hasDmiOverride authBinds)
+            then throw "F1 eval-intune-on: himmelblaud BindReadOnlyPaths must include dmi-override bind mounts"
+            else if !(hasDmiOverride taskBinds)
+            then throw "F1 eval-intune-on: himmelblaud-tasks BindReadOnlyPaths must include dmi-override bind mounts"
             else null;
         in
         # eval-disabled is arch-agnostic: with nixosEntraId.enable=false the
@@ -226,6 +274,9 @@
         // (nixpkgs.lib.optionalAttrs (builtins.elem system himmelblauSystems) {
           eval-intune-off = builtins.seq assertIntuneOff
             (mkEvalCheck "eval-intune-off" intuneOff.config);
+
+          eval-intune-on = builtins.seq assertIntuneOn
+            (mkEvalCheck "eval-intune-on" intuneOn.config);
 
           eval-bare-metal = mkEvalCheck "eval-bare-metal" bareMetal.config;
 

@@ -7,9 +7,10 @@
 #                             daemon, TPM-enabled rebuild, user-map,
 #                             Firefox SSO wiring).
 #   intune-compliance.nix  -- shims that make Intune device-compliance
-#                             actually pass on a NixOS guest (fake DMI,
-#                             fake /etc/os-release, sandbox overrides,
-#                             FileDescriptorStoreMax for PRT survival).
+#                             pass on a NixOS host (administrator-declared
+#                             DMI values, OS-release override, sandbox
+#                             overrides, FileDescriptorStoreMax for PRT
+#                             survival).
 #
 # This file does NOT import the upstream Himmelblau NixOS module nor
 # apply the himmelblau-tpm overlay -- the flake-level wrapper
@@ -79,10 +80,10 @@
         example = false;
         description = ''
           Whether to apply the Intune device-compliance shimming
-          (fake DMI / `/etc/os-release` bind-mounts inside the
-          himmelblau service mount namespaces, sandbox / address-
-          family overrides, `FileDescriptorStoreMax=1` for PRT
-          survival across restarts).
+          (administrator-declared DMI values and OS-release values
+          bind-mounted inside the himmelblau service mount namespaces,
+          sandbox / address-family overrides, `FileDescriptorStoreMax=1`
+          for PRT survival across restarts).
 
           Set to `false` if you only want the Himmelblau workspace
           (PAM / NSS / broker / daemon) without the Intune-specific
@@ -91,7 +92,7 @@
         '';
       };
 
-      fakeDmi = lib.mkOption {
+      dmiOverride = lib.mkOption {
         type = lib.types.attrsOf lib.types.str;
         default = { };
         example = lib.literalExpression ''
@@ -103,12 +104,39 @@
           }
         '';
         description = ''
-          DMI / SMBIOS values to bind-mount over `/sys/class/dmi/id/`
-          inside the himmelblau service mount namespaces only.
-          Defeats Intune compliance flagging a virtualised guest as
-          `Cloud Hypervisor`/`KVM`/etc. Keys are sysfs filenames
+          Administrator-declared DMI / SMBIOS values to bind-mount
+          over `/sys/class/dmi/id/` inside the himmelblau service
+          mount namespaces only.  Keys are sysfs filenames
           (`sys_vendor`, `product_name`, `board_vendor`,
-          `board_name`, ...).
+          `board_name`, ...).  This does not bypass Conditional
+          Access policies — it only controls what Intune's compliance
+          agent observes about the hardware identity.
+        '';
+      };
+
+      osReleaseOverride = lib.mkOption {
+        type = lib.types.lines;
+        default = ''
+          PRETTY_NAME="Ubuntu 22.04.4 LTS"
+          NAME="Ubuntu"
+          VERSION_ID="22.04"
+          VERSION="22.04.4 LTS (Jammy Jellyfish)"
+          VERSION_CODENAME=jammy
+          ID=ubuntu
+          ID_LIKE=debian
+          HOME_URL="https://www.ubuntu.com/"
+          SUPPORT_URL="https://help.ubuntu.com/"
+          BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+          PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+          UBUNTU_CODENAME=jammy
+        '';
+        description = ''
+          OS-release values supplied to the Himmelblau service namespace
+          via bind-mounts over `/etc/os-release` and
+          `/usr/lib/os-release`.  The default presents Ubuntu 22.04.4
+          LTS, which is on the Intune supported-distro list.  Override
+          with any other supported distribution's os-release content if
+          needed.  This does not bypass Conditional Access policies.
         '';
       };
     };
