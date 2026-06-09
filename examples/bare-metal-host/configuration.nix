@@ -1,5 +1,5 @@
 # The host's NixOS module — extracted from the inline module in
-# `flake.nix` so it can be reused by `nixos-entra-id`'s flake.checks
+# `flake.nix` so it can be reused by `entrablau.nix`'s flake.checks
 # without re-running a sub-flake.
 #
 # Path: examples/bare-metal-host/configuration.nix
@@ -34,7 +34,7 @@
 
   # The Entra ID config. Single tenant, Intune-enrolled,
   # one mapped user.
-  nixosEntraId = {
+  entrablau = {
     enable = true;
     domain = [ "contoso.com" ];
     userMap.alice = "alice@contoso.com";
@@ -44,11 +44,9 @@
     intuneCompliance = {
       enable = true;
 
-      # Replace with values cribbed from a real supported
-      # device's `dmidecode -t system,baseboard` output --
-      # Intune treats anything matching "QEMU"/"Cloud
-      # Hypervisor"/etc. as non-compliant.
-      fakeDmi = {
+      # Administrator-declared DMI values. Replace with values from
+      # the real hardware's `dmidecode -t system,baseboard` output.
+      dmiOverride = {
         sys_vendor   = "Contoso Corp.";
         product_name = "ContosoBook 15";
         board_vendor = "Contoso Corp.";

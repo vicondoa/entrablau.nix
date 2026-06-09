@@ -1,7 +1,7 @@
 # Bare-metal example
 
-A minimum NixOS host that uses `nixos-entra-id` on real hardware (no
-microVM framework involved).
+A minimum NixOS host that uses `entrablau.nix` (`github:vicondoa/entrablau.nix`)
+on real hardware — no microVM framework involved.
 
 ## Eval-test it
 
@@ -21,22 +21,16 @@ without actually building anything.
 
 - `nixpkgs` — pinned independently of the parent flake so you can
   copy this directory and use it as a starting point.
-- `nixos-entra-id` — pulled via `path:../..`, i.e. the parent repo.
+- `entrablau` — pulled via `path:../..`, i.e. the parent repo.
   In a real consumer flake, swap this for
-  `github:vicondoa/nixos-entra-id/v0.1.0`.
+  `github:vicondoa/entrablau.nix/v1.0.0`.
 
 The module set:
 
-- `nixos-entra-id.nixosModules.default` — imports the upstream
-  Himmelblau NixOS module, our two concern files, and applies the
+- `entrablau.nixosModules.default` — imports the upstream Himmelblau
+  NixOS module, the two concern files, and applies the
   `himmelblau-tpm` overlay.
-- An inline module that declares the host's `nixosEntraId.*` shape:
-  one tenant (`contoso.com`), one mapped user (`alice`), `join`
-  type (Intune-enrolled), and a realistic-looking `fakeDmi` block.
-
-## Bare-metal vs. VM
-
-Nothing here knows about microVMs. To deploy the same module set
-inside a [vicondoa/nixling] VM, see [`../inside-nixling-vm/`](../inside-nixling-vm/).
-
-[vicondoa/nixling]: https://github.com/vicondoa/nixling
+- `configuration.nix` — declares the host's `entrablau.*` shape:
+  one tenant (`contoso.com`), one mapped user (`alice`), `join` type
+  (Intune-enrolled), and a `dmiOverride` block with administrator-
+  declared DMI values.

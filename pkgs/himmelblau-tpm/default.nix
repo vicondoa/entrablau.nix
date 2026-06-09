@@ -171,6 +171,15 @@ let
     chmod -R u+w $out
     cd $out
 
+    # Let the generated default.nix receive our patched crate sources as
+    # normal Nix arguments. This avoids embedding absolute /nix/store paths
+    # in generated source, which pure flake evaluation rejects on fresh
+    # machines.
+    ${pkgs.gnused}/bin/sed -i '1a\
+  libhimmelblauPatched,\
+  kanidmHsmCryptoPatched,
+    ' default.nix
+
     # 1. Cargo.nix: enable `tpm` cargo feature on the relevant dep
     #    entries inside every workspace member's dependencies block.
     #    The pattern matches bare {name; packageId;} blocks that lack
@@ -209,10 +218,10 @@ let
             DEP_TSS2_ESYS_VERSION = "''${pkgs.tpm2-tss.version}";\
           };\
           libhimmelblau = attrs: {\
-            src = ${libhimmelblauPatched};\
+            src = libhimmelblauPatched;\
           };\
           kanidm-hsm-crypto = attrs: {\
-            src = ${kanidmHsmCryptoPatched};\
+            src = kanidmHsmCryptoPatched;\
           };
     ' default.nix
   '';
@@ -225,7 +234,9 @@ let
   #   - libhimmelblau (LGPL-3.0-or-later, statically linked)
   #   - kanidm-hsm-crypto (MPL-2.0, statically linked)
   # The combined-work license is GPL-3.0-or-later. See ../../THIRD-PARTY.md.
-  rawPackages = (import patchedSrc { inherit pkgs; }).packages;
+  rawPackages = (import patchedSrc {
+    inherit pkgs libhimmelblauPatched kanidmHsmCryptoPatched;
+  }).packages;
 in
 pkgs.lib.mapAttrs
   (_name: drv: drv.overrideAttrs (old: {

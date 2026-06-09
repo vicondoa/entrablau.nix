@@ -3,7 +3,7 @@
     "himmelblau": {
       "inputs": {
         "nixpkgs": [
-          "nixos-entra-id",
+          "entrablau",
           "nixpkgs"
         ]
       },
@@ -22,7 +22,7 @@
         "type": "github"
       }
     },
-    "nixos-entra-id": {
+    "entrablau": {
       "inputs": {
         "himmelblau": "himmelblau",
         "nixpkgs": [
@@ -57,7 +57,7 @@
     },
     "root": {
       "inputs": {
-        "nixos-entra-id": "nixos-entra-id",
+        "entrablau": "entrablau",
         "nixpkgs": "nixpkgs"
       }
     }

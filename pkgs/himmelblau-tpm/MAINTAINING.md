@@ -37,7 +37,7 @@ than mysteriously at runtime.
 ## Bumping the himmelblau flake input
 
 ```
-cd /path/to/nixos-entra-id
+cd /path/to/entrablau.nix
 nix flake lock --update-input himmelblau
 nix build .#himmelblau-tpm
 ```

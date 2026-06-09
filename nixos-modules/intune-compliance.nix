@@ -2,68 +2,55 @@
 #
 # These do not change what Himmelblau itself sees -- they change what
 # the daemons report to Microsoft Intune during enrolment + ongoing
-# compliance evaluation, so a NixOS guest is not flagged as
-# "unsupported distribution" or "Cloud Hypervisor" and ejected from
-# the tenant.
+# compliance evaluation, so a NixOS host is not flagged as
+# "unsupported distribution" and ejected from the tenant.
 #
-# Gated by `nixosEntraId.intuneCompliance.enable` (default true) so a
+# Gated by `entrablau.intuneCompliance.enable` (default true) so a
 # pure Azure-AD-Registered BYOD host that is NOT enrolled in Intune
 # can disable the shimming and run a vanilla Himmelblau workspace.
 { lib, config, ... }:
 
 let
-  cfg = config.nixosEntraId;
+  cfg = config.entrablau;
   compliance = cfg.intuneCompliance;
-  dmiFields = lib.attrNames compliance.fakeDmi;
+  dmiFields = lib.attrNames compliance.dmiOverride;
 in
 
 {
   config = lib.mkIf (cfg.enable && compliance.enable) {
     environment.etc = lib.mkMerge [
       {
-        # MSIT-style Intune parses /etc/os-release to detect distro;
-        # NixOS isn't in the supported list and would be flagged
-        # non-compliant. Both /etc/os-release AND /usr/lib/os-release
-        # must be faked -- the Rust os_release crate reads /etc
-        # only with no fallback, so bind-mounting just one leaves
-        # the other reporting NixOS.
-        "himmelblau/fake-os-release".text = ''
-          PRETTY_NAME="Ubuntu 22.04.4 LTS"
-          NAME="Ubuntu"
-          VERSION_ID="22.04"
-          VERSION="22.04.4 LTS (Jammy Jellyfish)"
-          VERSION_CODENAME=jammy
-          ID=ubuntu
-          ID_LIKE=debian
-          HOME_URL="https://www.ubuntu.com/"
-          SUPPORT_URL="https://help.ubuntu.com/"
-          BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
-          PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
-          UBUNTU_CODENAME=jammy
-        '';
+        # Intune's compliance agent parses /etc/os-release to detect
+        # the distribution; NixOS is not on the supported list.
+        # Both /etc/os-release AND /usr/lib/os-release must be
+        # overridden -- the Rust os_release crate reads /etc only
+        # with no fallback, so bind-mounting just one leaves the
+        # other reporting NixOS.  The content is taken from
+        # `entrablau.intuneCompliance.osReleaseOverride`.
+        "himmelblau/os-release-override".text = compliance.osReleaseOverride;
       }
 
-      # Per-key fake DMI files. Each becomes
-      # /etc/himmelblau/dmi/<k> with text = <v>\n. Bind-mounted
-      # over /sys/class/dmi/id/<k> in the himmelblau service
-      # namespaces only.
+      # Per-key administrator-declared DMI files.  Each becomes
+      # /etc/himmelblau/dmi-override/<k> with text = <v>\n.
+      # Bind-mounted over /sys/class/dmi/id/<k> in the himmelblau
+      # service namespaces only.
       (lib.mapAttrs'
-        (k: v: lib.nameValuePair "himmelblau/dmi/${k}" { text = v + "\n"; })
-        compliance.fakeDmi)
+        (k: v: lib.nameValuePair "himmelblau/dmi-override/${k}" { text = v + "\n"; })
+        compliance.dmiOverride)
     ];
 
     # Apply the os-release + DMI bind-mounts to both the auth
     # daemon (sends DMI at enrollment) and the tasks daemon
     # (evaluates compliance rules against /etc/os-release).
     systemd.services.himmelblaud.serviceConfig.BindReadOnlyPaths = [
-      "/etc/himmelblau/fake-os-release:/etc/os-release"
-      "/etc/himmelblau/fake-os-release:/usr/lib/os-release"
-    ] ++ (map (f: "/etc/himmelblau/dmi/${f}:/sys/class/dmi/id/${f}") dmiFields);
+      "/etc/himmelblau/os-release-override:/etc/os-release"
+      "/etc/himmelblau/os-release-override:/usr/lib/os-release"
+    ] ++ (map (f: "/etc/himmelblau/dmi-override/${f}:/sys/class/dmi/id/${f}") dmiFields);
 
     systemd.services.himmelblaud-tasks.serviceConfig.BindReadOnlyPaths = [
-      "/etc/himmelblau/fake-os-release:/etc/os-release"
-      "/etc/himmelblau/fake-os-release:/usr/lib/os-release"
-    ] ++ (map (f: "/etc/himmelblau/dmi/${f}:/sys/class/dmi/id/${f}") dmiFields);
+      "/etc/himmelblau/os-release-override:/etc/os-release"
+      "/etc/himmelblau/os-release-override:/usr/lib/os-release"
+    ] ++ (map (f: "/etc/himmelblau/dmi-override/${f}:/sys/class/dmi/id/${f}") dmiFields);
 
     # The upstream tasks unit sets RestrictAddressFamilies=AF_UNIX,
     # which blocks ALL TCP/UDP sockets. apply_intune_policy runs
