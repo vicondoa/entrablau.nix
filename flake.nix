@@ -166,8 +166,12 @@
             }
           ];
 
-          # Synthetic "intune-on" config -- compliance shim active
-          # with a minimal dmiOverride block.
+          # Synthetic "intune-on" config -- compliance shim active with
+          # a minimal dmiOverride block AND an explicit osReleaseOverride
+          # value.  The sentinel string "ID=entrablau-eval-sentinel" is
+          # distinctive enough that any drift in the option type (e.g.
+          # lines → attrsOf) that corrupts text rendering will be caught
+          # by assertIntuneOn below.
           intuneOn = mkSys [
             {
               entrablau = {
@@ -181,6 +185,13 @@
                     sys_vendor   = "Example Corp.";
                     product_name = "ExampleBook 1";
                   };
+                  osReleaseOverride = ''
+                    ID=entrablau-eval-sentinel
+                    NAME="Entrablau Eval Sentinel OS"
+                    PRETTY_NAME="Entrablau Eval Sentinel OS 22.04"
+                    VERSION_ID="22.04"
+                    VERSION_CODENAME=entrablau_eval
+                  '';
                 };
               };
             }
@@ -246,15 +257,36 @@
               taskBinds = svcTask.BindReadOnlyPaths or [];
               hasOsRelease = s: nixpkgs.lib.any (b: nixpkgs.lib.hasPrefix "/etc/himmelblau/os-release-override:" b) s;
               hasDmiOverride = s: nixpkgs.lib.any (b: nixpkgs.lib.hasInfix "dmi-override" b) s;
+              # Sentinel string set in the intuneOn config above.  Any
+              # type-shape drift (e.g. lines → attrsOf) that corrupts
+              # text serialisation will make the .text field not contain
+              # this value and the check below will catch it.
+              osReleaseSentinel = "ID=entrablau-eval-sentinel";
+              osReleaseText = etcCfg."himmelblau/os-release-override".text or "";
+              # Exact bind-mount entries the compliance module must emit.
+              hasEtcOsRelease = s:
+                nixpkgs.lib.elem "/etc/himmelblau/os-release-override:/etc/os-release" s;
+              hasUsrLibOsRelease = s:
+                nixpkgs.lib.elem "/etc/himmelblau/os-release-override:/usr/lib/os-release" s;
             in
             if !(etcCfg ? "himmelblau/os-release-override")
             then throw "F1 eval-intune-on: /etc/himmelblau/os-release-override must be defined when intuneCompliance.enable=true"
             else if etcCfg ? "himmelblau/fake-os-release"
             then throw "F1 eval-intune-on: old path himmelblau/fake-os-release must not appear in evaluated config"
+            else if !(nixpkgs.lib.hasInfix osReleaseSentinel osReleaseText)
+            then throw "F1 eval-intune-on: /etc/himmelblau/os-release-override .text must contain the sentinel '${osReleaseSentinel}' -- type-shape drift in osReleaseOverride option?"
             else if !(hasOsRelease authBinds)
             then throw "F1 eval-intune-on: himmelblaud BindReadOnlyPaths must include os-release-override bind mount"
             else if !(hasOsRelease taskBinds)
             then throw "F1 eval-intune-on: himmelblaud-tasks BindReadOnlyPaths must include os-release-override bind mount"
+            else if !(hasEtcOsRelease authBinds)
+            then throw "F1 eval-intune-on: himmelblaud BindReadOnlyPaths must include os-release-override:/etc/os-release"
+            else if !(hasEtcOsRelease taskBinds)
+            then throw "F1 eval-intune-on: himmelblaud-tasks BindReadOnlyPaths must include os-release-override:/etc/os-release"
+            else if !(hasUsrLibOsRelease authBinds)
+            then throw "F1 eval-intune-on: himmelblaud BindReadOnlyPaths must include os-release-override:/usr/lib/os-release"
+            else if !(hasUsrLibOsRelease taskBinds)
+            then throw "F1 eval-intune-on: himmelblaud-tasks BindReadOnlyPaths must include os-release-override:/usr/lib/os-release"
             else if !(hasDmiOverride authBinds)
             then throw "F1 eval-intune-on: himmelblaud BindReadOnlyPaths must include dmi-override bind mounts"
             else if !(hasDmiOverride taskBinds)
