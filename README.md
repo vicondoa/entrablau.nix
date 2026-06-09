@@ -175,6 +175,8 @@ docs/
 ```
 
 ## Flake outputs
+
+| Output | Description |
 |---|---|
 | `nixosModules.default` | `imports = [ ... ];` in any NixOS config |
 | `overlays.default` | adds `pkgs.himmelblauTpm.{daemon,broker,...}` |

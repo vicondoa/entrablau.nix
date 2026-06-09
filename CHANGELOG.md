@@ -17,7 +17,7 @@ below). No compatibility aliases for pre-1.0 option paths.
 |---|---|---|
 | legacy option root | `entrablau.*` | **Breaking.** Rename the root key in your NixOS configuration to `entrablau`. No alias. |
 | legacy DMI attribute under `intuneCompliance` | `intuneCompliance.dmiOverride` | Renamed for clarity; no alias |
-| _(absent)_ | `intuneCompliance.osReleaseOverride` | New — explicit OS-release field overrides |
+| _(absent)_ | `intuneCompliance.osReleaseOverride` | New — whole-file `/etc/os-release` text override (bind-mounted into the Himmelblau service namespace) |
 | legacy repository input | `inputs.entrablau.url = "github:vicondoa/entrablau.nix/v1.0.0"` | Repository renamed |
 
 See [`docs/reference/options.md`](./docs/reference/options.md) for the
@@ -29,9 +29,10 @@ full option reference and migration table.
   DMI attribute.
   Administrator-declared DMI field values bind-mounted into the
   Himmelblau service mount namespaces.
-- `entrablau.intuneCompliance.osReleaseOverride` — explicit
-  per-field `/etc/os-release` overrides supplied to Himmelblau
-  service namespaces.
+- `entrablau.intuneCompliance.osReleaseOverride` — whole-file
+  `/etc/os-release` text override (type `lines`) bind-mounted into
+  the Himmelblau service namespace. The default is a complete
+  Ubuntu 22.04.4 LTS `os-release` file.
 - `docs/` tree: explanation, reference (options, GitHub Actions),
   how-to import guide.
 - `AGENTS.md` — contributor / agent workflow documentation.

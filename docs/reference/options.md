@@ -35,17 +35,18 @@ option names will fail to evaluate after upgrading to v1.0.0.
 ### `entrablau.joinType`
 
 - **Type:** `enum [ "join" "register" ]`
-- **Default:** `"join"`
-- **Example:** `"register"`
+- **Default:** `"register"`
+- **Example:** `"join"`
 - **Description:** `"join"` for Intune-enrolled (Azure AD joined)
   devices. `"register"` for BYOD (Azure AD registered) devices.
 
 ### `entrablau.localUser`
 
-- **Type:** `string`
-- **Default:** `""`
-- **Description:** The local NixOS user name that is the primary Entra
-  user on this host. Used by `aad-tool` and the enrolment flow.
+- **Type:** `null or string`
+- **Default:** `null`
+- **Description:** Name of the local NixOS user account that maps to an
+  Entra UPN. Informational/diagnostic; the authoritative mapping is
+  `userMap`.
 
 ### `entrablau.userMap`
 
