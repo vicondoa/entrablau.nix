@@ -3,7 +3,7 @@
 #
 # Scans committed surfaces for:
 #   A) Old repository identifier (should be replaced with the new name)
-#   B) Old NixOS option tree prefix (should be updated in docs/modules)
+#   B) Legacy DMI option spelling (should not appear in docs/modules)
 #   C) Forbidden framework-coupling reference — constructed at runtime
 #      from split strings so this file does not store the literal.
 #   D) Forbidden host-local path reference — constructed at runtime
@@ -39,10 +39,11 @@ _OR_A="nixos-"
 _OR_B="entra-id"
 PAT_OLD_REPO="${_OR_A}${_OR_B}"
 
-# B) Old NixOS option tree prefix used in module declarations and docs.
-_OO_A="nixos"
-_OO_B="EntraId"
-PAT_OLD_OPT="${_OO_A}${_OO_B}"
+# B) Legacy DMI option spelling: assembled from parts so this guard does
+#    not store the spelling verbatim.
+_DO_A="fake"
+_DO_B="Dmi"
+PAT_LEGACY_DMI="${_DO_A}${_DO_B}"
 
 # ── Scope ───────────────────────────────────────────────────────────────────
 # Scan all text files that are committed surfaces (docs, modules, examples,
@@ -72,7 +73,7 @@ fi
 VIOLATIONS=0
 declare -A VIOLATION_COUNTS=(
   [old_repo]=0
-  [old_opt]=0
+  [legacy_dmi]=0
   [framework]=0
   [host_local]=0
 )
@@ -102,7 +103,7 @@ for f in "${FILES[@]}"; do
   fi
 
   scan_pattern "old_repo"   "$PAT_OLD_REPO"   "$f" "old-repo-name"
-  scan_pattern "old_opt"    "$PAT_OLD_OPT"    "$f" "old-option-prefix"
+  scan_pattern "legacy_dmi" "$PAT_LEGACY_DMI" "$f" "legacy-dmi-option"
   scan_pattern "framework"  "$PAT_FRAMEWORK"  "$f" "framework-coupling"
   scan_pattern "host_local" "$PAT_HOST_LOCAL" "$f" "host-local-path"
 done
@@ -112,7 +113,7 @@ done
 echo ""
 echo "Results:"
 echo "  old repo name occurrences (files):    ${VIOLATION_COUNTS[old_repo]}"
-echo "  old option prefix occurrences (files): ${VIOLATION_COUNTS[old_opt]}"
+echo "  legacy DMI option occurrences (files): ${VIOLATION_COUNTS[legacy_dmi]}"
 echo "  framework-coupling occurrences (files): ${VIOLATION_COUNTS[framework]}"
 echo "  host-local path occurrences (files):   ${VIOLATION_COUNTS[host_local]}"
 echo ""

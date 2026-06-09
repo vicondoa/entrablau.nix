@@ -55,11 +55,8 @@ nix build .#himmelblau-tpm
 # Evaluate the bare-metal-host example
 nix eval ./examples/bare-metal-host#nixosConfigurations.bare-metal-host.config.system.build.toplevel.drvPath
 
-# Quick content checks (no old repo names, no old option names,
-# no framework-specific references in docs)
-rg --type md 'nixos-entra-id' docs/ README.md CHANGELOG.md AGENTS.md CONTRIBUTING.md SECURITY.md THIRD-PARTY.md
-rg --type md 'fakeDmi' docs/ README.md CHANGELOG.md AGENTS.md CONTRIBUTING.md SECURITY.md THIRD-PARTY.md
-rg --type md 'nixling' docs/ README.md CHANGELOG.md AGENTS.md CONTRIBUTING.md SECURITY.md THIRD-PARTY.md
+# Content/reference guard (no stale names, no framework-specific docs)
+bash scripts/check-wording.sh
 ```
 
 Expected output for the `rg` checks: no matches (exit code 1 from rg).
@@ -115,7 +112,7 @@ for the full CI and security posture. Key points:
 
 | Agent branch | Owned paths |
 |---|---|
-| `agent/docs` | `README.md`, `CHANGELOG.md`, `THIRD-PARTY.md`, `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md`, `docs/**`, deletion of `examples/inside-nixling-vm/**` |
+| `agent/docs` | `README.md`, `CHANGELOG.md`, `THIRD-PARTY.md`, `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md`, `docs/**`, deletion of framework-specific examples |
 | `agent/module-api` | `nixos-modules/**`, `pkgs/**`, `flake.nix`, `examples/bare-metal-host/**` |
 | `agent/ci-security` | `.github/**`, guard scripts |
 

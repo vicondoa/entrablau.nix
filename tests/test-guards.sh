@@ -180,7 +180,7 @@ mkdir -p "$WORD_DIR"
 _FC_A="nix"; _FC_B="ling"; PAT_FRAMEWORK="${_FC_A}${_FC_B}"
 _HL_A="/etc/"; _HL_B="nix"; _HL_C="os"; PAT_HOST_LOCAL="${_HL_A}${_HL_B}${_HL_C}"
 _OR_A="nixos-"; _OR_B="entra-id"; PAT_OLD_REPO="${_OR_A}${_OR_B}"
-_OO_A="nixos"; _OO_B="EntraId"; PAT_OLD_OPT="${_OO_A}${_OO_B}"
+_DO_A="fake"; _DO_B="Dmi"; PAT_LEGACY_DMI="${_DO_A}${_DO_B}"
 
 # ── W1: Clean file — wording guard passes ────────────────────────────────
 # Run the guard against the scripts/tests themselves (own scope only)
@@ -206,11 +206,11 @@ assert_exits 0 "wording: host-local path pattern detectable via grep" \
   grep -qF "$PAT_HOST_LOCAL" "$WORD_DIR/hostlocal.md"
 rm "$WORD_DIR/hostlocal.md"
 
-# ── W5: Synthetic file with old option prefix — must be caught ───────────
-echo "Set \`${PAT_OLD_OPT}.enable = true\`." > "$WORD_DIR/old_opt.md"
-assert_exits 0 "wording: old option prefix detectable via grep" \
-  grep -qF "$PAT_OLD_OPT" "$WORD_DIR/old_opt.md"
-rm "$WORD_DIR/old_opt.md"
+# ── W5: Synthetic file with legacy DMI option spelling — must be caught ──
+echo "Set \`${PAT_LEGACY_DMI}.sys_vendor = \"Contoso\"\`." > "$WORD_DIR/legacy_dmi.md"
+assert_exits 0 "wording: legacy DMI option detectable via grep" \
+  grep -qF "$PAT_LEGACY_DMI" "$WORD_DIR/legacy_dmi.md"
+rm "$WORD_DIR/legacy_dmi.md"
 
 # ── W6: Guard source file itself is clean (no forbidden literals) ─────────
 # Use the assembled pattern variables (not literals) so this test file

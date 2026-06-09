@@ -78,27 +78,16 @@ Nix store caches may be used via `nix-community/cache-nix-action` or
 similar, pinned to a SHA. Cache keys must include the `flake.lock`
 hash to avoid stale Himmelblau build artefacts.
 
-## Docs lint checks
+## Content/reference guard
 
-The following `rg` checks are run in CI to guard against stale
-references in documentation:
+CI runs the repository's leak-free wording/reference guard:
 
 ```bash
-# No old repo name
-rg --type md 'nixos-entra-id' \
-  docs/ README.md CHANGELOG.md AGENTS.md CONTRIBUTING.md SECURITY.md THIRD-PARTY.md
-
-# No old option name
-rg --type md 'fakeDmi' \
-  docs/ README.md CHANGELOG.md AGENTS.md CONTRIBUTING.md SECURITY.md THIRD-PARTY.md
-
-# No named framework references
-rg --type md 'nixling' \
-  docs/ README.md CHANGELOG.md AGENTS.md CONTRIBUTING.md SECURITY.md THIRD-PARTY.md
+bash scripts/check-wording.sh
 ```
 
-Each check is expected to return exit code 1 (no matches). A match
-fails the job.
+The guard constructs restricted patterns at runtime so the guard itself
+does not commit those terms. Any match in committed surfaces fails CI.
 
 ## Branch protection
 

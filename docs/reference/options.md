@@ -7,10 +7,10 @@ v1.0.0 and the migration table from v0.1.0.
 
 | Old option (v0.1.0) | New option (v1.0.0) | Action required |
 |---|---|---|
-| `intuneCompliance.fakeDmi` | `intuneCompliance.dmiOverride` | Rename the attribute in your configuration. No alias exists. |
+| legacy DMI attribute under `intuneCompliance` | `intuneCompliance.dmiOverride` | Rename the attribute in your configuration. No alias exists. |
 | _(absent)_ | `intuneCompliance.osReleaseOverride` | Optional. Set to override `/etc/os-release` fields in the Himmelblau service namespace. |
-| `inputs.nixos-entra-id` | `inputs.entrablau` | Update your flake input name and URL. |
-| `github:vicondoa/nixos-entra-id` | `github:vicondoa/entrablau.nix/v1.0.0` | Update the flake URL. |
+| legacy repository input | `inputs.entrablau` | Update your flake input name and URL. |
+| legacy repository URL | `github:vicondoa/entrablau.nix/v1.0.0` | Update the flake URL. |
 
 There are no compatibility aliases. Configurations using the old
 option names will fail to evaluate after upgrading to v1.0.0.
@@ -69,7 +69,7 @@ option names will fail to evaluate after upgrading to v1.0.0.
 
 ### `nixosEntraId.intuneCompliance.dmiOverride`
 
-**Replaces `fakeDmi` from v0.1.0. No alias.**
+**Replaces the pre-1.0 DMI attribute. No alias.**
 
 - **Type:** `attrsOf string`
 - **Default:** `{}`

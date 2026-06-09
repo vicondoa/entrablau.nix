@@ -14,16 +14,17 @@ stable. No compatibility aliases for pre-1.0 option paths.
 
 | Old (0.1.0) | New (1.0.0) | Notes |
 |---|---|---|
-| `intuneCompliance.fakeDmi` | `intuneCompliance.dmiOverride` | Renamed for clarity; no alias |
+| legacy DMI attribute under `intuneCompliance` | `intuneCompliance.dmiOverride` | Renamed for clarity; no alias |
 | _(absent)_ | `intuneCompliance.osReleaseOverride` | New — explicit OS-release field overrides |
-| `inputs.nixos-entra-id.url = "github:vicondoa/nixos-entra-id"` | `inputs.entrablau.url = "github:vicondoa/entrablau.nix/v1.0.0"` | Repository renamed |
+| legacy repository input | `inputs.entrablau.url = "github:vicondoa/entrablau.nix/v1.0.0"` | Repository renamed |
 
 See [`docs/reference/options.md`](./docs/reference/options.md) for the
 full option reference and migration table.
 
 ### Added
 
-- `nixosEntraId.intuneCompliance.dmiOverride` — replaces `fakeDmi`.
+- `nixosEntraId.intuneCompliance.dmiOverride` — replaces the pre-1.0
+  DMI attribute.
   Administrator-declared DMI field values bind-mounted into the
   Himmelblau service mount namespaces.
 - `nixosEntraId.intuneCompliance.osReleaseOverride` — explicit
@@ -38,15 +39,14 @@ full option reference and migration table.
 
 ### Changed
 
-- **Repository renamed** from `vicondoa/nixos-entra-id` to
-  `vicondoa/entrablau.nix`. The public option root (`nixosEntraId.*`)
-  is unchanged.
+- **Repository renamed** to `vicondoa/entrablau.nix`. The public
+  option root (`nixosEntraId.*`) is unchanged.
 - `README.md` rewritten for v1.0 with updated quick-start, What's
   Included table, and repository layout.
 - `CHANGELOG.md` consolidated; pre-1.0 bootstrap entries removed.
 - `THIRD-PARTY.md` updated to reference `entrablau.nix`.
-- `examples/inside-nixling-vm/` removed — this repo is framework-agnostic
-  and does not carry framework-specific examples.
+- Framework-specific example material removed — this repo is
+  framework-agnostic and does not carry framework-specific examples.
 
 ### Fixed
 
@@ -80,4 +80,3 @@ shimming.
   (Himmelblau-derived outputs in `pkgs/himmelblau-tpm/`).
 
 [Himmelblau]: https://github.com/himmelblau-idm/himmelblau
-
