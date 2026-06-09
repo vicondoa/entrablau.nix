@@ -1,6 +1,6 @@
-# Top-level entry point for the nixos-entra-id NixOS module.
+# Top-level entry point for the entrablau.nix NixOS module.
 #
-# Declares the `nixosEntraId.*` option tree and imports the two
+# Declares the `entrablau.*` option tree and imports the two
 # concern-split implementation files:
 #
 #   himmelblau.nix         -- Himmelblau workspace (PAM, NSS, broker,
@@ -24,7 +24,7 @@
     ./intune-compliance.nix
   ];
 
-  options.nixosEntraId = {
+  options.entrablau = {
     enable = lib.mkEnableOption "Himmelblau-backed Microsoft Entra ID authentication";
 
     domain = lib.mkOption {

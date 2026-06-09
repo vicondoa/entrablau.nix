@@ -5,13 +5,13 @@
 # compliance evaluation, so a NixOS host is not flagged as
 # "unsupported distribution" and ejected from the tenant.
 #
-# Gated by `nixosEntraId.intuneCompliance.enable` (default true) so a
+# Gated by `entrablau.intuneCompliance.enable` (default true) so a
 # pure Azure-AD-Registered BYOD host that is NOT enrolled in Intune
 # can disable the shimming and run a vanilla Himmelblau workspace.
 { lib, config, ... }:
 
 let
-  cfg = config.nixosEntraId;
+  cfg = config.entrablau;
   compliance = cfg.intuneCompliance;
   dmiFields = lib.attrNames compliance.dmiOverride;
 in
@@ -26,7 +26,7 @@ in
         # overridden -- the Rust os_release crate reads /etc only
         # with no fallback, so bind-mounting just one leaves the
         # other reporting NixOS.  The content is taken from
-        # `nixosEntraId.intuneCompliance.osReleaseOverride`.
+        # `entrablau.intuneCompliance.osReleaseOverride`.
         "himmelblau/os-release-override".text = compliance.osReleaseOverride;
       }
 

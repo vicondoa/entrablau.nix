@@ -5,7 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     # Upstream Himmelblau workspace. Pinned to the same rev as
-    # /etc/nixos's flake.lock at the time of the Phase-3 extract --
+    # /etc/nix/nix.conf's flake.lock at the time of the Phase-3 extract --
     # the sed patches in `pkgs/himmelblau-tpm/default.nix` anchor on
     # source lines that exist in this rev. The package has build-time
     # `grep` guards that fail loudly if a future upstream rev moves
@@ -55,10 +55,10 @@
     {
       # Consumer entry point. A consumer flake does:
       #
-      #   imports = [ inputs.nixos-entra-id.nixosModules.default ];
-      #   nixosEntraId.enable = true;
-      #   nixosEntraId.domain = [ "contoso.com" ];
-      #   nixosEntraId.userMap.alice = "alice@contoso.com";
+      #   imports = [ inputs.entrablau.nixosModules.default ];
+      #   entrablau.enable = true;
+      #   entrablau.domain = [ "contoso.com" ];
+      #   entrablau.userMap.alice = "alice@contoso.com";
       #
       # The wrapper here imports the upstream Himmelblau NixOS module
       # (from our pinned `inputs.himmelblau`) AND applies the
@@ -148,15 +148,15 @@
 
           # Synthetic "disabled" config -- the module must be a
           # complete no-op for every consumer-visible service /
-          # mount / etc file when nixosEntraId.enable = false.
-          disabled = mkSys [ { nixosEntraId.enable = false; } ];
+          # mount / etc file when entrablau.enable = false.
+          disabled = mkSys [ { entrablau.enable = false; } ];
 
           # Synthetic "intune-off" config -- Himmelblau is wired,
           # but the compliance shim must NOT be active. Asserts the
           # two halves of the module decompose cleanly.
           intuneOff = mkSys [
             {
-              nixosEntraId = {
+              entrablau = {
                 enable = true;
                 domain = [ "example.invalid" ];
                 userMap.alice = "alice@example.invalid";
@@ -170,7 +170,7 @@
           # with a minimal dmiOverride block.
           intuneOn = mkSys [
             {
-              nixosEntraId = {
+              entrablau = {
                 enable = true;
                 domain = [ "example.invalid" ];
                 userMap.alice = "alice@example.invalid";
@@ -205,16 +205,16 @@
           # here and `throw` synchronously during attrset eval.
           assertDisabled =
             if disabled.config.services.himmelblau.enable
-            then throw "F1 eval-disabled: services.himmelblau.enable must be false when nixosEntraId.enable=false (the module is leaking config into the disabled branch)"
+            then throw "F1 eval-disabled: services.himmelblau.enable must be false when entrablau.enable=false (the module is leaking config into the disabled branch)"
             else if disabled.config.environment.etc ? "himmelblau/os-release-override"
-            then throw "F1 eval-disabled: /etc/himmelblau/os-release-override must NOT be defined when nixosEntraId.enable=false (the intune-compliance branch is firing unconditionally)"
+            then throw "F1 eval-disabled: /etc/himmelblau/os-release-override must NOT be defined when entrablau.enable=false (the intune-compliance branch is firing unconditionally)"
             else if disabled.config.environment.etc ? "himmelblau/fake-os-release"
             then throw "F1 eval-disabled: old path himmelblau/fake-os-release must not appear in evaluated config"
             else null;
 
           assertIntuneOff =
             if !intuneOff.config.services.himmelblau.enable
-            then throw "F1 eval-intune-off: services.himmelblau.enable must be true when nixosEntraId.enable=true (Himmelblau is the whole point)"
+            then throw "F1 eval-intune-off: services.himmelblau.enable must be true when entrablau.enable=true (Himmelblau is the whole point)"
             else if !(nixpkgs.lib.elem "/bin/bash" intuneOff.config.environment.shells)
             then throw "F1 eval-intune-off: /bin/bash must be listed in environment.shells for Entra NSS shell compatibility"
             else if !(nixpkgs.lib.elem "L+ /bin/bash - - - - /run/current-system/sw/bin/bash" intuneOff.config.systemd.tmpfiles.rules)
@@ -261,7 +261,7 @@
             then throw "F1 eval-intune-on: himmelblaud-tasks BindReadOnlyPaths must include dmi-override bind mounts"
             else null;
         in
-        # eval-disabled is arch-agnostic: with nixosEntraId.enable=false the
+        # eval-disabled is arch-agnostic: with entrablau.enable=false the
         # module is fully inert and pkgs.himmelblauTpm is never referenced,
         # so it works on aarch64 too.
         {

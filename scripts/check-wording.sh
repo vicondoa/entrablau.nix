@@ -8,8 +8,10 @@
 #      from split strings so this file does not store the literal.
 #   D) Forbidden host-local path reference — constructed at runtime
 #      from split strings so this file does not store the literal.
+#   E) Stale option namespace — constructed at runtime from split strings
+#      so this file does not store the literal.
 #
-# DESIGN NOTE: patterns C and D are assembled from variable parts below
+# DESIGN NOTE: patterns C, D, and E are assembled from variable parts below
 # and never appear verbatim in this source file. This prevents the guard
 # from being a source of leakage and means it does not need to exclude
 # itself from scanning.
@@ -45,6 +47,12 @@ _DO_A="fake"
 _DO_B="Dmi"
 PAT_LEGACY_DMI="${_DO_A}${_DO_B}"
 
+# E) Stale option namespace: assembled from parts so this guard does not
+#    store the forbidden verbatim string.
+_SN_A="nixos"
+_SN_B="EntraId"
+PAT_STALE_NS="${_SN_A}${_SN_B}"
+
 # ── Scope ───────────────────────────────────────────────────────────────────
 # Scan all text files that are committed surfaces (docs, modules, examples,
 # workflows, scripts, tests). Exclude the .git directory and binary files.
@@ -74,6 +82,7 @@ VIOLATIONS=0
 declare -A VIOLATION_COUNTS=(
   [old_repo]=0
   [legacy_dmi]=0
+  [stale_ns]=0
   [framework]=0
   [host_local]=0
 )
@@ -104,6 +113,7 @@ for f in "${FILES[@]}"; do
 
   scan_pattern "old_repo"   "$PAT_OLD_REPO"   "$f" "old-repo-name"
   scan_pattern "legacy_dmi" "$PAT_LEGACY_DMI" "$f" "legacy-dmi-option"
+  scan_pattern "stale_ns"   "$PAT_STALE_NS"   "$f" "stale-namespace"
   scan_pattern "framework"  "$PAT_FRAMEWORK"  "$f" "framework-coupling"
   scan_pattern "host_local" "$PAT_HOST_LOCAL" "$f" "host-local-path"
 done
@@ -114,6 +124,7 @@ echo ""
 echo "Results:"
 echo "  old repo name occurrences (files):    ${VIOLATION_COUNTS[old_repo]}"
 echo "  legacy DMI option occurrences (files): ${VIOLATION_COUNTS[legacy_dmi]}"
+echo "  stale namespace occurrences (files):   ${VIOLATION_COUNTS[stale_ns]}"
 echo "  framework-coupling occurrences (files): ${VIOLATION_COUNTS[framework]}"
 echo "  host-local path occurrences (files):   ${VIOLATION_COUNTS[host_local]}"
 echo ""

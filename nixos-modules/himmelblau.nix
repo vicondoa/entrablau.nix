@@ -11,7 +11,7 @@
 { lib, pkgs, config, ... }:
 
 let
-  cfg = config.nixosEntraId;
+  cfg = config.entrablau;
   himmelblauTpm = pkgs.himmelblauTpm;
 in
 

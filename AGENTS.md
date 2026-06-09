@@ -11,7 +11,7 @@ entrablau.nix/
 ├── flake.nix                  <- top-level flake: inputs, outputs, checks
 ├── flake.lock                 <- pinned input revisions
 ├── nixos-modules/
-│   ├── default.nix            <- nixosEntraId.* option schema + sub-imports
+│   ├── default.nix            <- entrablau.* option schema + sub-imports
 │   ├── himmelblau.nix         <- PAM/NSS/broker/daemon, user-map, Firefox SSO
 │   └── intune-compliance.nix  <- DMI/os-release bind-mounts, sandbox overrides
 ├── pkgs/
@@ -77,7 +77,7 @@ Expected output for the `rg` checks: no matches (exit code 1 from rg).
 
 ## Panel review gate
 
-PRs that touch the public option namespace (`nixosEntraId.*`),
+PRs that touch the public option namespace (`entrablau.*`),
 `flake.nix`, or `pkgs/himmelblau-tpm/` require at least one human
 reviewer to approve before merge. Documentation-only PRs (changes
 confined to `docs/`, `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`,
@@ -98,7 +98,7 @@ for the full CI and security posture. Key points:
 
 ## Naming and option-migration policy
 
-- The public option root is `nixosEntraId.*` and is stable from v1.0.0.
+- The public option root is `entrablau.*` and is stable from v1.0.0.
 - When an option is renamed, the old name is **removed without an alias**
   in the next major version. Aliases are never added; callers must
   migrate.

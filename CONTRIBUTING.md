@@ -54,7 +54,7 @@ nix flake check --no-build
 nix build .#himmelblau-tpm
 
 # Docs content checks (no stale references)
-rg --type md 'nixos-entra-id|fakeDmi' docs/ README.md CHANGELOG.md AGENTS.md CONTRIBUTING.md SECURITY.md THIRD-PARTY.md
+bash scripts/check-wording.sh
 ```
 
 ## PR conventions

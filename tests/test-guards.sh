@@ -181,6 +181,7 @@ _FC_A="nix"; _FC_B="ling"; PAT_FRAMEWORK="${_FC_A}${_FC_B}"
 _HL_A="/etc/"; _HL_B="nix"; _HL_C="os"; PAT_HOST_LOCAL="${_HL_A}${_HL_B}${_HL_C}"
 _OR_A="nixos-"; _OR_B="entra-id"; PAT_OLD_REPO="${_OR_A}${_OR_B}"
 _DO_A="fake"; _DO_B="Dmi"; PAT_LEGACY_DMI="${_DO_A}${_DO_B}"
+_SN_A="nixos"; _SN_B="EntraId"; PAT_STALE_NS="${_SN_A}${_SN_B}"
 
 # ── W1: Clean file — wording guard passes ────────────────────────────────
 # Run the guard against the scripts/tests themselves (own scope only)
@@ -212,7 +213,13 @@ assert_exits 0 "wording: legacy DMI option detectable via grep" \
   grep -qF "$PAT_LEGACY_DMI" "$WORD_DIR/legacy_dmi.md"
 rm "$WORD_DIR/legacy_dmi.md"
 
-# ── W6: Guard source file itself is clean (no forbidden literals) ─────────
+# ── W6: Synthetic file with stale namespace — must be caught ─────────────
+echo "Set \`${PAT_STALE_NS}.enable = true\`." > "$WORD_DIR/stale_ns.md"
+assert_exits 0 "wording: stale namespace pattern detectable via grep" \
+  grep -qF "$PAT_STALE_NS" "$WORD_DIR/stale_ns.md"
+rm "$WORD_DIR/stale_ns.md"
+
+# ── W7: Guard source file itself is clean (no forbidden literals) ─────────
 # Use the assembled pattern variables (not literals) so this test file
 # is itself free of forbidden verbatim strings.
 assert_exits 1 "wording: guard source does not contain literal framework name" \
@@ -223,6 +230,9 @@ assert_exits 1 "wording: guard source does not contain literal host-local path" 
 
 assert_exits 1 "wording: guard source does not contain literal old repo name" \
   grep -qF "$PAT_OLD_REPO" "$REPO_ROOT/scripts/check-wording.sh"
+
+assert_exits 1 "wording: guard source does not contain literal stale namespace" \
+  grep -qF "$PAT_STALE_NS" "$REPO_ROOT/scripts/check-wording.sh"
 
 rm -rf "$WORD_DIR"
 
