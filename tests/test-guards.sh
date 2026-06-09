@@ -171,6 +171,72 @@ rm "$WF_DIR/jobwrite.yml"
 
 rm -f "$WF_DIR/clean.yml"
 
+# ── Composite / local action scanning tests ──────────────────────────────
+
+ACT_DIR="$SCRATCH/actions/my-action"
+mkdir -p "$ACT_DIR" "$SCRATCH/workflows-empty"
+
+# ── PA1: Clean composite action — must pass ─────────────────────────────
+cat > "$ACT_DIR/action.yml" <<'EOF'
+name: My Action
+description: A clean composite action
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+    - run: echo "hello"
+      shell: bash
+EOF
+assert_exits 0 "policy: clean composite action passes" \
+  bash "$POLICY_GUARD" "$SCRATCH/workflows-empty" "$SCRATCH/actions"
+rm "$ACT_DIR/action.yml"
+
+# ── PA2: Composite action with unpinned uses: — must fail ───────────────
+cat > "$ACT_DIR/action.yml" <<'EOF'
+name: Unpinned Action
+description: Uses an unpinned third-party action
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+    - run: echo "hello"
+      shell: bash
+EOF
+assert_exits 1 "policy: composite action with unpinned step fails" \
+  bash "$POLICY_GUARD" "$SCRATCH/workflows-empty" "$SCRATCH/actions"
+rm "$ACT_DIR/action.yml"
+
+# ── PA3: Composite action with secrets expansion — must fail ────────────
+cat > "$ACT_DIR/action.yml" <<'EOF'
+name: Secrets Action
+description: References secrets directly (should use inputs instead)
+runs:
+  using: composite
+  steps:
+    - run: echo "${{ secrets.MY_TOKEN }}"
+      shell: bash
+EOF
+assert_exits 1 "policy: composite action with secrets reference fails" \
+  bash "$POLICY_GUARD" "$SCRATCH/workflows-empty" "$SCRATCH/actions"
+rm "$ACT_DIR/action.yml"
+
+# ── PA4: Composite action local ref inside action — still allowed ────────
+cat > "$ACT_DIR/action.yml" <<'EOF'
+name: Local Ref Action
+description: Calls another local action — local refs are allowed
+runs:
+  using: composite
+  steps:
+    - uses: ./.github/actions/other-action
+    - run: echo "done"
+      shell: bash
+EOF
+assert_exits 0 "policy: local ref inside composite action is allowed" \
+  bash "$POLICY_GUARD" "$SCRATCH/workflows-empty" "$SCRATCH/actions"
+rm "$ACT_DIR/action.yml"
+
+rm -rf "$ACT_DIR" "$SCRATCH/actions" "$SCRATCH/workflows-empty"
+
 # ── Wording guard tests (synthetic files, not real tree) ─────────────────
 
 WORD_DIR="$SCRATCH/wordtest"

@@ -14,6 +14,9 @@
 set -euo pipefail
 
 WORKFLOW_DIR="${1:-.github/workflows}"
+# Derive the actions directory: sibling to the parent of WORKFLOW_DIR's
+# parent (.github), or override via second argument.
+ACTIONS_DIR="${2:-$(dirname "$WORKFLOW_DIR")/actions}"
 VIOLATIONS=0
 
 # ── helpers ────────────────────────────────────────────────────────────────
@@ -30,9 +33,8 @@ info() { echo "INFO $*"; }
 mapfile -t WORKFLOWS < <(find "$WORKFLOW_DIR" -maxdepth 1 -name '*.yml' -o -name '*.yaml' 2>/dev/null | sort)
 
 if [[ ${#WORKFLOWS[@]} -eq 0 ]]; then
-  info "No workflow files found in $WORKFLOW_DIR — nothing to check."
-  exit 0
-fi
+  info "No workflow files found in $WORKFLOW_DIR — skipping workflow checks."
+else
 
 info "Checking ${#WORKFLOWS[@]} workflow(s) in $WORKFLOW_DIR"
 
@@ -96,6 +98,52 @@ for WF in "${WORKFLOWS[@]}"; do
     fail "$WF_NAME" "self-hosted runner declaration detected"
   fi
 done
+
+fi  # end: workflows found
+
+# ── 2. Scan composite / local actions under .github/actions/ ───────────────
+
+mapfile -t ACTIONS < <(find "$ACTIONS_DIR" -name 'action.yml' -o -name 'action.yaml' 2>/dev/null | sort)
+
+if [[ ${#ACTIONS[@]} -gt 0 ]]; then
+  info "Checking ${#ACTIONS[@]} composite action(s) in $ACTIONS_DIR"
+
+  for ACTION in "${ACTIONS[@]}"; do
+    ACTION_NAME="$(realpath --relative-to="$ACTIONS_DIR" "$ACTION" 2>/dev/null || echo "$ACTION")"
+    info "  → $ACTION_NAME"
+
+    # ── 2a. Unpinned action references inside composite action steps ─────
+    # Local refs (./) are allowed; third-party must be SHA-pinned.
+    while IFS= read -r line; do
+      ref="${line#*uses:}"
+      ref="${ref#"${ref%%[! ]*}"}"
+      [[ "$ref" == ./* ]]        && continue
+      [[ "$ref" == docker://* ]] && continue
+      after_at="${ref##*@}"
+      sha="${after_at%%#*}"
+      sha="${sha%"${sha##*[! ]}"}"
+      if ! [[ "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+        fail "$ACTION_NAME" "Unpinned action in composite step: $ref"
+      fi
+    done < <(grep -v '^\s*#' "$ACTION" | grep -E 'uses:\s+\S')
+
+    # ── 2b. Secrets expansion inside composite action ────────────────────
+    # Composite actions must receive credentials via inputs, not direct
+    # secrets expansion. A ${{ secrets.* }} in action.yml is a violation.
+    if grep -v '^\s*#' "$ACTION" | grep -qE '\$\{\{\s*secrets\.'; then
+      fail "$ACTION_NAME" "secrets expansion in composite action — pass credentials via inputs"
+    fi
+
+    # ── 2c. Self-hosted runner patterns ──────────────────────────────────
+    # Composite actions don't declare runners, but catch any accidental
+    # self-hosted references (e.g. in embedded run scripts or comments).
+    if grep -qE "runs-on:.*self-hosted" "$ACTION"; then
+      fail "$ACTION_NAME" "self-hosted runner reference in composite action"
+    fi
+  done
+else
+  info "No composite actions found in $ACTIONS_DIR — skipping action checks."
+fi
 
 # ── Summary ────────────────────────────────────────────────────────────────
 
