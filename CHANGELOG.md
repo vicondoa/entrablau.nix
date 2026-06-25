@@ -5,6 +5,14 @@ All notable changes to entrablau.nix are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `entrablau-sso-check` and `entrablau-sso-wait` readiness helpers,
+  installed when `entrablau.enable = true`, for redacted Himmelblau /
+  Entra SSO diagnostics and bounded waits before interactive auth.
+
 ## [1.0.0] - 2026-06-01
 
 First stable release. The option namespace (`entrablau.*`) is now

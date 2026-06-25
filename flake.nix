@@ -224,12 +224,21 @@
             else null;
 
           assertIntuneOff =
+            let
+              systemPackageNames =
+                map (pkg: nixpkgs.lib.getName pkg)
+                  intuneOff.config.environment.systemPackages;
+            in
             if !intuneOff.config.services.himmelblau.enable
             then throw "F1 eval-intune-off: services.himmelblau.enable must be true when entrablau.enable=true (Himmelblau is the whole point)"
             else if !(nixpkgs.lib.elem "/bin/bash" intuneOff.config.environment.shells)
             then throw "F1 eval-intune-off: /bin/bash must be listed in environment.shells for Entra NSS shell compatibility"
             else if !(nixpkgs.lib.elem "L+ /bin/bash - - - - /run/current-system/sw/bin/bash" intuneOff.config.systemd.tmpfiles.rules)
             then throw "F1 eval-intune-off: /bin/bash tmpfiles symlink must be installed for Entra NSS shell compatibility"
+            else if !(nixpkgs.lib.elem "entrablau-sso-check" systemPackageNames)
+            then throw "F1 eval-intune-off: entrablau-sso-check must be installed when entrablau.enable=true"
+            else if !(nixpkgs.lib.elem "entrablau-sso-wait" systemPackageNames)
+            then throw "F1 eval-intune-off: entrablau-sso-wait must be installed when entrablau.enable=true"
             else if intuneOff.config.environment.etc ? "himmelblau/os-release-override"
             then throw "F1 eval-intune-off: /etc/himmelblau/os-release-override must NOT be defined when intuneCompliance.enable=false (compliance shim leaking into the off branch)"
             else if intuneOff.config.environment.etc ? "himmelblau/fake-os-release"
