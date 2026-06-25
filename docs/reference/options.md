@@ -56,6 +56,24 @@ option names will fail to evaluate after upgrading to v1.0.0.
 - **Description:** Maps local NixOS user names to Entra UPNs. Rendered
   to `/etc/himmelblau/user-map`.
 
+When `entrablau.enable = true`, the module also installs two
+redacted readiness helpers:
+
+- `entrablau-sso-check [--upn <upn>|--local-user <name>]` checks the
+  Himmelblau daemon, optional tasks service, NSS mapping, `aad-tool
+  status`, user D-Bus broker activation, `linux-entra-sso --help`, and
+  Firefox native-messaging manifest host path.
+- `entrablau-sso-wait [--upn <upn>|--local-user <name>] [--timeout
+  <seconds>] [--interval <seconds>]` polls the same prerequisites with
+  a bounded timeout for scripts that must wait before interactive
+  authentication.
+
+Both helpers suppress command output that could contain tokens,
+cookies, raw account JSON, account IDs, or sensitive authentication
+details. If `entrablau.localUser` names an entry in `userMap`, that UPN
+is used as the default NSS check target; otherwise pass `--upn` or
+`--local-user`.
+
 ---
 
 ## `entrablau.intuneCompliance`

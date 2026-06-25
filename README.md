@@ -101,15 +101,20 @@ sudo nixos-rebuild switch --flake .#my-host
 Trigger enrolment (or let PAM do it on first login):
 
 ```bash
-sudo aad-tool auth-test --name alice@contoso.com
+aad-tool auth-test --name alice@contoso.com
 ```
+
+Run `auth-test` from the real user's graphical terminal or another
+session with a controlling TTY and user D-Bus session. The Hello PIN /
+MFA prompt is interactive; running it from a headless root shell can
+make the prompt path fail before credentials are requested.
 
 Verify:
 
 ```bash
 aad-tool tpm     # should report "Hardware TPM supported: true"
-aad-tool status
-systemctl status himmelblaud
+entrablau-sso-check
+entrablau-sso-wait --upn alice@contoso.com --timeout 60
 ```
 
 For a detailed walkthrough see
@@ -128,12 +133,17 @@ For a detailed walkthrough see
   `tss` group was not yet created. Reboot once after enabling TPM.
 - **`auth-test` fails with `400 Bad Request: Value must be a valid
   PEM-encoded PKCS#10 CSR`** → the crate patches in
-  `pkgs/himmelblau-tpm/` handle this; if it still fails, capture the
-  request with `RUST_LOG=trace aad-tool auth-test …` and open an
-  issue.
+  `pkgs/himmelblau-tpm/` handle this; if it still fails, collect only
+  redacted logs and never paste tokens, cookies, raw account JSON, or
+  account IDs into an issue.
 - **Firefox SSO doesn't kick in** → confirm `programs.firefox.enable`
   is `true`; the upstream Himmelblau module sets it but a local
   override to `false` disables the SSO extension policy.
+- **`auth-test` or PAM returns `PAM_IGNORE` before prompting** → the
+  daemon, user bus broker, NSS mapping, or Firefox native-messaging
+  path may not be ready yet. Run `entrablau-sso-check` for a redacted
+  readiness report, or `entrablau-sso-wait --upn <user@domain>` before
+  starting an interactive authentication flow.
 - **`himmelblaud-tasks` logs `federation provider not set`** →
   `entrablau.intuneCompliance.enable` is `false` or the rebuild
   didn't complete. The `RestrictAddressFamilies` widening is part of
@@ -149,6 +159,7 @@ For a detailed walkthrough see
 | TPM-enabled Himmelblau packages | `pkgs.himmelblauTpm.*` — workspace rebuilt with the `tpm` cargo feature; two vendored crate patches for Intune CSR compatibility |
 | Firefox SSO + native-messaging | `linux-entra-sso` WebExtension + managed policy, inherited from the upstream Himmelblau NixOS module |
 | pinentry / UI glue | `pinentry-qt` wired for interactive Entra authentication prompts |
+| SSO diagnostics | `entrablau-sso-check` and `entrablau-sso-wait` verify daemon, NSS, broker, native-messaging, and SSO-host readiness without printing tokens or raw account data |
 | User-map | `/etc/himmelblau/user-map` generated from `entrablau.userMap` |
 | Intune compliance service configuration | `himmelblaud-tasks.service` sandbox overrides (`RestrictAddressFamilies`, `ReadWritePaths`, `FileDescriptorStoreMax=1` for PRT survival) |
 | DMI / OS-release overrides | `entrablau.intuneCompliance.dmiOverride` and `osReleaseOverride` supply administrator-declared DMI and OS-release values bind-mounted **only into the Himmelblau service mount namespaces** |

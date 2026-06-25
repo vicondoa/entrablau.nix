@@ -142,12 +142,14 @@ Enrolment happens on the first authentication. You can trigger it
 explicitly:
 
 ```bash
-sudo aad-tool auth-test --name alice@contoso.com
+aad-tool auth-test --name alice@contoso.com
 ```
 
-A `pinentry-qt` window appears for the Entra credential / MFA prompt.
-On success, a client certificate is issued by the Intune MDM CA and
-the sealed PRT is stored under `/var/lib/himmelblaud/`.
+Run this from the real user's graphical terminal (or another session
+with a controlling TTY and user D-Bus session). A `pinentry-qt` window
+appears for the Entra credential / Hello PIN / MFA prompt. On success,
+a client certificate is issued by the Intune MDM CA and the sealed PRT
+is stored under `/var/lib/himmelblaud/`.
 
 Alternatively, log out and log in at the display manager as
 `alice@contoso.com` — the PAM stack triggers the same enrolment path.
@@ -156,13 +158,27 @@ Alternatively, log out and log in at the display manager as
 
 ```bash
 aad-tool tpm                              # "Hardware TPM supported: true"
-aad-tool status                           # himmelblaud reachable
-systemctl status himmelblaud
-systemctl status himmelblaud-tasks        # Intune policy daemon
-systemctl --user status himmelblau-broker # user-scoped broker
+entrablau-sso-check                       # redacted readiness diagnostics
+entrablau-sso-wait --upn alice@contoso.com --timeout 60
 
 # NSS lookup
 getent passwd alice@contoso.com
+```
+
+`entrablau-sso-check` verifies that `himmelblaud.service` is active,
+`himmelblaud-tasks.service` is active when present, `aad-tool status`
+succeeds, the mapped UPN resolves through NSS, the user D-Bus broker
+name can be listed or activated, `linux-entra-sso --help` exits
+cleanly, and the Firefox native-messaging manifest points at an
+executable host. It suppresses command output that could contain
+tokens, cookies, raw account JSON, account IDs, or tenant-specific
+authentication details.
+
+Use `entrablau-sso-wait` before launching an interactive authentication
+flow from scripts or desktop wrappers:
+
+```bash
+entrablau-sso-wait --local-user alice --timeout 60
 ```
 
 ## Troubleshooting
@@ -171,8 +187,9 @@ getent passwd alice@contoso.com
 |---|---|---|
 | `aad-tool tpm` shows TPM not enabled | Module not imported or build used wrong overlay | Confirm `entrablau.nixosModules.default` is in `modules`; check `which aad-tool` points to Nix store |
 | `Permission denied` on `/dev/tpmrm0` | `security.tpm2.enable` not set or udev rule not loaded | Set `security.tpm2.enable = true` and reboot |
-| `400 Bad Request: Value must be a valid PEM-encoded PKCS#10 CSR` | Intune strict validation | Crate patches should handle this; capture `RUST_LOG=trace aad-tool auth-test …` and open an issue |
+| `400 Bad Request: Value must be a valid PEM-encoded PKCS#10 CSR` | Intune strict validation | Crate patches should handle this; if it still fails, share only redacted logs with tokens, cookies, raw account JSON, and account IDs removed |
 | Firefox SSO inactive | `programs.firefox.enable` overridden to `false` | Restore `programs.firefox.enable = true` |
+| `PAM_IGNORE` before a Hello PIN / MFA prompt | Daemon, NSS, user bus broker, or native-messaging path not ready yet | Run `entrablau-sso-check`; use `entrablau-sso-wait --upn <user@domain>` before retrying from a graphical terminal |
 | `himmelblaud-tasks` federation error | `intuneCompliance.enable = false` or rebuild incomplete | Set `intuneCompliance.enable = true` and rebuild |
 
 ## See also
