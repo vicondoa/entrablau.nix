@@ -21,8 +21,10 @@ let
     if cfg.localUser != null then cfg.localUser else "";
   ssoRuntimeInputs = [
     pkgs.coreutils
+    pkgs.glibc
     pkgs.gnugrep
     pkgs.gnused
+    pkgs.systemd
   ];
   ssoDiagnosticsCommon = ''
     DEFAULT_UPN=${lib.escapeShellArg defaultMappedUpn}
@@ -472,7 +474,7 @@ in
     };
 
     # TPM-enabled aad-tool built locally so the user can run
-    # `aad-tool tpm` / `aad-tool auth-test --name <local>` from the
+    # `aad-tool tpm` / `aad-tool auth-test --name <upn>` from the
     # host shell.
     #
     # himmelblau's `himmelblau-sso` broker uses the `pinentry` Rust
